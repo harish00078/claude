@@ -29,7 +29,9 @@ export function createJetMaterials() {
       color: 0x111111,
       metalness: 0.9,
       roughness: 0.2,
-      flatShading: true
+      flatShading: true,
+      emissive: 0xff4400,
+      emissiveIntensity: 0.2
     }),
     accent: new THREE.MeshStandardMaterial({
       color: 0xff6b35,

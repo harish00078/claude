@@ -64,7 +64,7 @@ export default function GameOverScreen({
   }, [onRestart, onMenu])
 
   return (
-    <div className="game-over-screen" onClick={onRestart}>
+    <div className="game-over-screen">
       <canvas ref={canvasRef} className="bg-canvas" />
 
       <div className="content">

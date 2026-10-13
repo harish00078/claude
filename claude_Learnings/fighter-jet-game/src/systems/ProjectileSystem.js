@@ -86,6 +86,7 @@ export class ProjectileSystem {
         lifetime: 0,
         velocity: new THREE.Vector3(),
         target: null,
+        homingOnPlayer: true,
         turnRate: MISSILE_TURN_RATE
       }
       this.scene.add(mesh)
@@ -178,7 +179,7 @@ export class ProjectileSystem {
     this.activeEnemyBullets.push(bullet)
   }
 
-  spawnMissile(position, direction, target) {
+  spawnMissile(position, direction, target = null) {
     const missile = this.getMissile()
     if (!missile) return
 
@@ -186,16 +187,17 @@ export class ProjectileSystem {
     missile.userData.velocity.copy(direction).multiplyScalar(MISSILE_SPEED)
     missile.userData.lifetime = MISSILE_LIFETIME
     missile.userData.target = target
+    missile.userData.homingOnPlayer = !target
     missile.visible = true
     missile.lookAt(new THREE.Vector3().copy(position).add(direction))
 
     this.activeMissiles.push(missile)
   }
 
-  update(deltaTime, enemyManager, particleSystem, audioSystem) {
+  update(deltaTime, enemyManager, particleSystem, audioSystem, playerPosition) {
     this.updatePlayerBullets(deltaTime, enemyManager, particleSystem, audioSystem)
     this.updateEnemyBullets(deltaTime, particleSystem, audioSystem)
-    this.updateMissiles(deltaTime, enemyManager, particleSystem, audioSystem)
+    this.updateMissiles(deltaTime, enemyManager, particleSystem, audioSystem, playerPosition)
     this.updateMines(deltaTime)
   }
 
@@ -275,37 +277,41 @@ export class ProjectileSystem {
     }
   }
 
-  updateMissiles(deltaTime, enemyManager, particleSystem, audioSystem) {
+  steerMissile(missile, targetPos, deltaTime) {
+    const toTarget = new THREE.Vector3().subVectors(targetPos, missile.position)
+    if (toTarget.lengthSq() < 0.0001) return
+    toTarget.normalize()
+    const currentDir = missile.userData.velocity.clone().normalize()
+    const angle = currentDir.angleTo(toTarget)
+    if (angle > 0.01) {
+      const axis = new THREE.Vector3().crossVectors(currentDir, toTarget)
+      if (axis.lengthSq() < 0.0001) return
+      axis.normalize()
+      const turnAmount = Math.min(angle, missile.userData.turnRate * deltaTime)
+      missile.userData.velocity.applyAxisAngle(axis, turnAmount)
+      missile.userData.velocity.normalize().multiplyScalar(MISSILE_SPEED)
+      missile.lookAt(new THREE.Vector3().copy(missile.position).add(missile.userData.velocity))
+    }
+  }
+
+  updateMissiles(deltaTime, enemyManager, particleSystem, audioSystem, playerPosition) {
     for (let i = this.activeMissiles.length - 1; i >= 0; i--) {
       const missile = this.activeMissiles[i]
 
-      // Homing behavior
-      if (missile.userData.target && enemyManager && enemyManager.isEnemyAlive(missile.userData.target)) {
+      if (missile.userData.homingOnPlayer && playerPosition) {
+        this.steerMissile(missile, playerPosition, deltaTime)
+      } else if (missile.userData.target && enemyManager && enemyManager.isEnemyAlive(missile.userData.target)) {
         const targetPos = enemyManager.getEnemyPosition(missile.userData.target)
-        if (targetPos) {
-          const toTarget = new THREE.Vector3().subVectors(targetPos, missile.position).normalize()
-          const currentDir = missile.userData.velocity.clone().normalize()
-
-          // Smoothly rotate toward target
-          const angle = currentDir.angleTo(toTarget)
-          if (angle > 0.01) {
-            const axis = new THREE.Vector3().crossVectors(currentDir, toTarget).normalize()
-            const turnAmount = Math.min(angle, missile.userData.turnRate * deltaTime)
-            missile.userData.velocity.applyAxisAngle(axis, turnAmount)
-            missile.userData.velocity.normalize().multiplyScalar(MISSILE_SPEED)
-            missile.lookAt(new THREE.Vector3().copy(missile.position).add(missile.userData.velocity))
-          }
-        }
+        if (targetPos) this.steerMissile(missile, targetPos, deltaTime)
       } else {
-        missile.userData.target = null // Target lost
+        missile.userData.target = null
       }
 
       missile.position.add(missile.userData.velocity.clone().multiplyScalar(deltaTime))
       missile.userData.lifetime -= deltaTime
 
-      // Check collision
       let hit = false
-      if (missile.userData.target && enemyManager) {
+      if (missile.userData.target && !missile.userData.homingOnPlayer && enemyManager) {
         hit = enemyManager.checkMissileCollision(missile)
       }
 
@@ -329,9 +335,21 @@ export class ProjectileSystem {
     this.activeEnemyBullets.splice(index, 1)
   }
 
+  clearActive() {
+    const hide = (list) => {
+      for (const mesh of list) mesh.visible = false
+      list.length = 0
+    }
+    hide(this.activePlayerBullets)
+    hide(this.activeEnemyBullets)
+    hide(this.activeMissiles)
+    hide(this.activeMines)
+  }
+
   despawnMissile(index, missile, particleSystem, hit) {
     missile.visible = false
     missile.userData.target = null
+    missile.userData.homingOnPlayer = true
     this.activeMissiles.splice(index, 1)
 
     if (hit && particleSystem) {

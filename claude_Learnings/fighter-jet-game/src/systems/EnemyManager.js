@@ -65,6 +65,7 @@ export class EnemyManager {
     this.enemiesKilledInWave = 0
     this.waveTimer = 0
     this.waveDelay = 3 // seconds between waves
+    this.campaignActive = false
 
     // Spawning
     this.spawnTimer = 0
@@ -78,6 +79,7 @@ export class EnemyManager {
     // Player reference (set externally)
     this.playerPosition = new THREE.Vector3()
     this.playerVelocity = new THREE.Vector3()
+    this.playerForward = new THREE.Vector3(0, 0, -1)
 
     // Callbacks
     this.onEnemyKilled = null
@@ -174,17 +176,23 @@ export class EnemyManager {
     mesh.userData.hitFlashTime = 0
     mesh.userData.spawnTime = 0
 
-    // Spawn position - ahead of player with some variance
+    // Spawn ahead of the player's current heading
     const spawnDistance = 150 + randomRange(0, 50)
     const spawnAngle = randomRange(-Math.PI / 3, Math.PI / 3)
     const spawnHeight = randomRange(-20, 30)
 
-    const forward = new THREE.Vector3(0, 0, -1)
-    const right = new THREE.Vector3(1, 0, 0)
+    const forward = this.playerForward.clone().normalize()
+    const worldUp = new THREE.Vector3(0, 1, 0)
+    const right = new THREE.Vector3().crossVectors(forward, worldUp)
+    if (right.lengthSq() < 0.001) {
+      right.set(1, 0, 0)
+    } else {
+      right.normalize()
+    }
 
     mesh.position.copy(this.playerPosition)
-      .add(forward.clone().multiplyScalar(spawnDistance))
-      .add(right.clone().multiplyScalar(Math.sin(spawnAngle) * 80))
+      .add(forward.multiplyScalar(spawnDistance))
+      .add(right.multiplyScalar(Math.sin(spawnAngle) * 80))
     mesh.position.y += spawnHeight
 
     // Face roughly toward player
@@ -208,8 +216,9 @@ export class EnemyManager {
   }
 
   updateWaves(deltaTime) {
-    if (this.activeEnemies.length === 0 && this.enemiesInWave > 0) {
-      // Wave complete
+    if (!this.campaignActive) return
+    // Wave is done only after every enemy has spawned AND none remain alive
+    if (this.activeEnemies.length === 0 && this.enemiesInWave === 0) {
       this.waveTimer += deltaTime
       if (this.waveTimer >= this.waveDelay) {
         this.startNextWave()
@@ -221,11 +230,12 @@ export class EnemyManager {
     this.wave++
     this.waveTimer = 0
     this.enemiesKilledInWave = 0
+    this.spawnTimer = 0
 
-    // Increase difficulty
     this.difficulty = Math.min(this.maxDifficulty, 1 + this.wave * 0.15)
     this.maxActiveEnemies = Math.min(20, 6 + Math.floor(this.wave * 0.8))
     this.spawnInterval = Math.max(0.4, 1.5 - this.wave * 0.05)
+    this.enemiesInWave = this.calculateWaveSize(this.wave)
 
     if (this.onWaveComplete) {
       this.onWaveComplete(this.wave)
@@ -477,7 +487,7 @@ export class EnemyManager {
     const forward = new THREE.Vector3(0, 0, -1).applyEuler(mesh.rotation)
     const gunPos = new THREE.Vector3(0, 0, -1.5).applyMatrix4(mesh.matrixWorld)
 
-    this.projectileSystem.spawnMissile(gunPos, forward, enemyObj)
+    this.projectileSystem.spawnMissile(gunPos, forward, null)
 
     if (this.audioSystem) this.audioSystem.playMissileLaunch()
   }
@@ -581,16 +591,34 @@ export class EnemyManager {
     return enemyObj.mesh.position.clone()
   }
 
-  setPlayerData(position, velocity) {
+  setPlayerData(position, velocity, forward) {
     this.playerPosition.copy(position)
     this.playerVelocity.copy(velocity)
+    if (forward) this.playerForward.copy(forward).normalize()
+  }
+
+  clearActiveEnemies() {
+    for (let i = this.activeEnemies.length - 1; i >= 0; i--) {
+      this.despawnEnemy(i, false)
+    }
+  }
+
+  reset() {
+    this.clearActiveEnemies()
+    this.waveTimer = 0
+    this.difficulty = 1
+    this.maxActiveEnemies = 8
+    this.spawnInterval = 1.5
+    this.startWave(1)
   }
 
   startWave(waveNumber = 1) {
+    this.campaignActive = true
     this.wave = waveNumber
     this.enemiesInWave = this.calculateWaveSize(waveNumber)
     this.enemiesKilledInWave = 0
     this.spawnTimer = 0
+    this.waveTimer = 0
   }
 
   calculateWaveSize(wave) {

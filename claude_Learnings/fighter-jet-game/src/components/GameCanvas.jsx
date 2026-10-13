@@ -85,8 +85,7 @@ const GameCanvas = forwardRef((props, ref) => {
     }
 
     enemyManagerRef.current.startWave(1)
-
-    // Start engine sound
+    onHighScoreChange(scoreSystemRef.current.getHighScore())
     audioSystemRef.current.startEngine()
 
     // Expose methods via ref
@@ -94,13 +93,17 @@ const GameCanvas = forwardRef((props, ref) => {
       camera: playerJetRef.current.getCamera(),
       startGame: () => {
         scoreSystemRef.current.reset()
-        playerJetRef.current.setPosition(0, 0, 0)
-        playerJetRef.current.health = 3
-        enemyManagerRef.current.startWave(1)
+        playerJetRef.current.reset()
+        projectileSystemRef.current.clearActive()
+        particleSystemRef.current.reset()
+        enemyManagerRef.current.reset()
         onScoreChange(0)
+        onHighScoreChange(scoreSystemRef.current.getHighScore())
         onWaveChange(1)
         onLivesChange(3)
         onComboChange(0)
+        onBoostChange(1)
+        onSpeedChange(0)
         audioSystemRef.current.startEngine()
       },
       pause: () => {
@@ -173,7 +176,8 @@ const GameCanvas = forwardRef((props, ref) => {
       deltaTime,
       enemyManagerRef.current,
       particleSystemRef.current,
-      audioSystemRef.current
+      audioSystemRef.current,
+      playerJetRef.current?.getPosition()
     )
 
     enemyManagerRef.current?.update(deltaTime)
@@ -190,7 +194,8 @@ const GameCanvas = forwardRef((props, ref) => {
     if (playerJetRef.current && enemyManagerRef.current) {
       enemyManagerRef.current.setPlayerData(
         playerJetRef.current.getPosition(),
-        playerJetRef.current.velocity
+        playerJetRef.current.velocity,
+        playerJetRef.current.getForward()
       )
     }
 

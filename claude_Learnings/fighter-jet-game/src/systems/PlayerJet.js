@@ -68,19 +68,18 @@ export class PlayerJet {
     this.group = createJetGeometry()
     this.scene.add(this.group)
 
-    // Apply materials
-    const materials = createJetMaterials()
+    this.materials = createJetMaterials()
     this.group.traverse((child) => {
       if (child.isMesh) {
         const name = child.geometry.type.toLowerCase()
-        if (name.includes('cone') || name.includes('box') && child.position.z < 1) {
-          child.material = materials.body
+        if (name.includes('cone') || (name.includes('box') && child.position.z < 1)) {
+          child.material = this.materials.body
         } else if (name.includes('sphere')) {
-          child.material = materials.canopy
+          child.material = this.materials.canopy
         } else if (name.includes('cylinder')) {
-          child.material = materials.engine
+          child.material = this.materials.engine
         } else {
-          child.material = materials.dark
+          child.material = this.materials.dark
         }
       }
     })
@@ -236,7 +235,7 @@ export class PlayerJet {
         this.invulnerable = false
         this.group.traverse((child) => {
           if (child.isMesh && child.material.opacity !== undefined) {
-            child.material.opacity = 1
+            child.material.opacity = child.material === this.materials.canopy ? 0.6 : 1
           }
         })
       }
@@ -252,17 +251,12 @@ export class PlayerJet {
   }
 
   updateVisuals(deltaTime) {
-    // Engine glow intensity based on speed/boost
-    const boostRatio = this.boostFuel / this.maxBoostFuel
     const speedRatio = this.speed / this.MAX_SPEED
 
-    this.group.traverse((child) => {
-      if (child.isMesh && child.material.emissiveIntensity !== undefined) {
-        if (child.material === child.material.engine) {
-          child.material.emissiveIntensity = lerp(0.2, 1.5, speedRatio)
-        }
-      }
-    })
+    if (this.materials?.engine) {
+      const boostGlow = this.input.boost && this.boostFuel > 0 ? 0.6 : 0
+      this.materials.engine.emissiveIntensity = lerp(0.2, 1.5, Math.min(1, speedRatio)) + boostGlow
+    }
   }
 
   updateCamera(deltaTime) {
@@ -289,7 +283,7 @@ export class PlayerJet {
   takeDamage(amount = 1) {
     if (this.invulnerable || this.health <= 0) return false
 
-    this.health -= amount
+    this.health = Math.max(0, this.health - amount)
     this.invulnerable = true
     this.invulnerableTime = this.INVULNERABLE_DURATION
 
@@ -314,6 +308,43 @@ export class PlayerJet {
 
   getPosition() {
     return this.position
+  }
+
+  getForward() {
+    return new THREE.Vector3(0, 0, -1).applyEuler(this.rotation)
+  }
+
+  reset() {
+    this.position.set(0, 0, 0)
+    this.rotation.set(0, 0, 0)
+    this.velocity.set(0, 0, 0)
+    this.speed = 0
+    this.targetSpeed = 0
+    this.health = this.maxHealth
+    this.invulnerable = false
+    this.invulnerableTime = 0
+    this.boostFuel = this.maxBoostFuel
+    this.fireCooldown = 0
+    this.gunIndex = 0
+    this.group.position.copy(this.position)
+    this.group.rotation.copy(this.rotation)
+    this.group.traverse((child) => {
+      if (child.isMesh && child.material?.opacity !== undefined) {
+        child.material.opacity = child.material === this.materials.canopy ? 0.6 : 1
+      }
+    })
+    this.camera.position.copy(this.cameraOffset)
+    this.camera.lookAt(this.cameraLookAtOffset)
+    if (this.engineTrailLeft) {
+      this.engineTrailLeft.points.length = 0
+      this.engineTrailLeft.active = false
+      this.engineTrailLeft.mesh.visible = false
+    }
+    if (this.engineTrailRight) {
+      this.engineTrailRight.points.length = 0
+      this.engineTrailRight.active = false
+      this.engineTrailRight.mesh.visible = false
+    }
   }
 
   getRotation() {

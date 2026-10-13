@@ -25,6 +25,15 @@ function App() {
   // Refs for game systems (initialized in GameCanvas)
   const gameSystemsRef = useRef(null)
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('fighterJetHighScore')
+      if (saved) setHighScore(parseInt(saved, 10) || 0)
+    } catch {
+      // Ignore storage errors (private mode, etc.)
+    }
+  }, [])
+
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {

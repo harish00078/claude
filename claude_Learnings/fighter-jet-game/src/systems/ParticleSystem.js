@@ -146,66 +146,74 @@ export class ParticleSystem {
     this.updateDebris(deltaTime)
   }
 
+  compactParticles(geo, dataArray, prevCount, writeCount) {
+    const sizes = geo.attributes.size.array
+    const positions = geo.attributes.position.array
+    for (let i = writeCount; i < prevCount; i++) {
+      sizes[i] = 0
+      positions[i * 3] = 0
+      positions[i * 3 + 1] = 0
+      positions[i * 3 + 2] = 0
+      dataArray[i] = null
+    }
+  }
+
   updateExplosions(deltaTime) {
     const positions = this.explosionGeo.attributes.position.array
     const sizes = this.explosionGeo.attributes.size.array
     const colors = this.explosionGeo.attributes.color.array
-    const lifetimes = this.explosionGeo.attributes.lifetime.array
-    const velocities = this.explosionGeo.attributes.velocity.array
+    const prevCount = this.explosionCount
+    let write = 0
 
-    let alive = 0
-    for (let i = 0; i < this.explosionCount; i++) {
+    for (let i = 0; i < prevCount; i++) {
       const data = this.explosionParticlesData[i]
       if (!data || data.lifetime <= 0) continue
 
       data.lifetime -= deltaTime
       if (data.lifetime <= 0) continue
 
-      // Update position
       data.position.add(data.velocity.clone().multiplyScalar(deltaTime))
-      data.velocity.y -= 9.8 * deltaTime * 0.5 // Gravity
-      data.velocity.multiplyScalar(0.98) // Drag
+      data.velocity.y -= 9.8 * deltaTime * 0.5
+      data.velocity.multiplyScalar(0.98)
 
-      // Update attributes
-      const idx = i * 3
+      const idx = write * 3
       positions[idx] = data.position.x
       positions[idx + 1] = data.position.y
       positions[idx + 2] = data.position.z
 
-      sizes[i] = data.size * (data.lifetime / data.maxLifetime)
+      sizes[write] = data.size * (data.lifetime / data.maxLifetime)
 
-      // Color fade from yellow to red to dark
       const lifeRatio = data.lifetime / data.maxLifetime
       if (lifeRatio > 0.5) {
-        // Yellow to orange
         const t = (lifeRatio - 0.5) * 2
         colors[idx] = 1
         colors[idx + 1] = lerp(0.2, 1, t)
         colors[idx + 2] = 0
       } else {
-        // Orange to red to dark
         const t = lifeRatio * 2
         colors[idx] = t
         colors[idx + 1] = t * 0.3
         colors[idx + 2] = 0
       }
 
-      alive++
+      this.explosionParticlesData[write] = data
+      write++
     }
+
+    this.compactParticles(this.explosionGeo, this.explosionParticlesData, prevCount, write)
     this.explosionGeo.attributes.position.needsUpdate = true
     this.explosionGeo.attributes.size.needsUpdate = true
     this.explosionGeo.attributes.color.needsUpdate = true
-    this.explosionCount = alive
+    this.explosionCount = write
   }
 
   updateSparks(deltaTime) {
     const positions = this.sparkGeo.attributes.position.array
     const sizes = this.sparkGeo.attributes.size.array
-    const lifetimes = this.sparkGeo.attributes.lifetime.array
-    const velocities = this.sparkGeo.attributes.velocity.array
+    const prevCount = this.sparkCount
+    let write = 0
 
-    let alive = 0
-    for (let i = 0; i < this.sparkCount; i++) {
+    for (let i = 0; i < prevCount; i++) {
       const data = this.sparkParticlesData[i]
       if (!data || data.lifetime <= 0) continue
 
@@ -216,29 +224,30 @@ export class ParticleSystem {
       data.velocity.y -= 20 * deltaTime
       data.velocity.multiplyScalar(0.95)
 
-      const idx = i * 3
+      const idx = write * 3
       positions[idx] = data.position.x
       positions[idx + 1] = data.position.y
       positions[idx + 2] = data.position.z
+      sizes[write] = data.size * (data.lifetime / data.maxLifetime)
 
-      sizes[i] = data.size * (data.lifetime / data.maxLifetime)
-
-      alive++
+      this.sparkParticlesData[write] = data
+      write++
     }
+
+    this.compactParticles(this.sparkGeo, this.sparkParticlesData, prevCount, write)
     this.sparkGeo.attributes.position.needsUpdate = true
     this.sparkGeo.attributes.size.needsUpdate = true
-    this.sparkCount = alive
+    this.sparkCount = write
   }
 
   updateSmoke(deltaTime) {
     const positions = this.smokeGeo.attributes.position.array
     const sizes = this.smokeGeo.attributes.size.array
     const colors = this.smokeGeo.attributes.color.array
-    const lifetimes = this.smokeGeo.attributes.lifetime.array
-    const velocities = this.smokeGeo.attributes.velocity.array
+    const prevCount = this.smokeCount
+    let write = 0
 
-    let alive = 0
-    for (let i = 0; i < this.smokeCount; i++) {
+    for (let i = 0; i < prevCount; i++) {
       const data = this.smokeParticlesData[i]
       if (!data || data.lifetime <= 0) continue
 
@@ -246,29 +255,30 @@ export class ParticleSystem {
       if (data.lifetime <= 0) continue
 
       data.position.add(data.velocity.clone().multiplyScalar(deltaTime))
-      data.velocity.y += 2 * deltaTime // Smoke rises
+      data.velocity.y += 2 * deltaTime
       data.velocity.multiplyScalar(0.97)
 
-      const idx = i * 3
+      const idx = write * 3
       positions[idx] = data.position.x
       positions[idx + 1] = data.position.y
       positions[idx + 2] = data.position.z
+      sizes[write] = data.size * (1 + (1 - data.lifetime / data.maxLifetime) * 2)
 
-      sizes[i] = data.size * (1 + (1 - data.lifetime / data.maxLifetime) * 2)
-
-      // Fade from gray to transparent
       const lifeRatio = data.lifetime / data.maxLifetime
       const gray = lerp(0.1, 0.5, lifeRatio)
       colors[idx] = gray
       colors[idx + 1] = gray
       colors[idx + 2] = gray
 
-      alive++
+      this.smokeParticlesData[write] = data
+      write++
     }
+
+    this.compactParticles(this.smokeGeo, this.smokeParticlesData, prevCount, write)
     this.smokeGeo.attributes.position.needsUpdate = true
     this.smokeGeo.attributes.size.needsUpdate = true
     this.smokeGeo.attributes.color.needsUpdate = true
-    this.smokeCount = alive
+    this.smokeCount = write
   }
 
   updateMuzzleFlashes(deltaTime) {
@@ -425,6 +435,33 @@ export class ParticleSystem {
 
   spawnSmallExplosion(position) {
     this.spawnExplosion(position, 'small')
+  }
+
+  reset() {
+    this.explosionCount = 0
+    this.sparkCount = 0
+    this.smokeCount = 0
+    this.explosionParticlesData.length = 0
+    this.sparkParticlesData.length = 0
+    this.smokeParticlesData.length = 0
+
+    const clearSizes = (geo) => {
+      const sizes = geo.attributes.size.array
+      sizes.fill(0)
+      geo.attributes.size.needsUpdate = true
+    }
+    clearSizes(this.explosionGeo)
+    clearSizes(this.sparkGeo)
+    clearSizes(this.smokeGeo)
+
+    for (const flash of this.muzzleFlashes) flash.visible = false
+    for (const piece of this.debris) piece.visible = false
+    for (const trail of this.trails) {
+      trail.points.length = 0
+      trail.active = false
+      trail.mesh.visible = false
+      trail.geo.setDrawRange(0, 0)
+    }
   }
 
   getExplosionConfig(type) {
