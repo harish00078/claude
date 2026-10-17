@@ -1,83 +1,83 @@
 import * as THREE from 'three'
 import { randomVec3 } from './math'
 
-// Create a low-poly fighter jet geometry (procedural)
+// Create a photorealistic 5th-Gen Stealth Fighter Jet geometry (F-22 Raptor Style)
 export function createJetGeometry() {
   const group = new THREE.Group()
 
-  // Fuselage (main body)
-  const fuselageGeo = new THREE.ConeGeometry(0.4, 4, 8, 1, true)
+  // Nose Cone (sleek pointed radar radome)
+  const noseGeo = new THREE.ConeGeometry(0.35, 1.8, 32)
+  noseGeo.rotateX(-Math.PI / 2)
+  const nose = new THREE.Mesh(noseGeo)
+  nose.position.z = -2.2
+  group.add(nose)
+
+  // Main Fuselage (smoothed stealth body)
+  const fuselageGeo = new THREE.CylinderGeometry(0.45, 0.55, 3.2, 32)
   fuselageGeo.rotateX(Math.PI / 2)
+  fuselageGeo.scale(1.2, 0.7, 1.0)
   const fuselage = new THREE.Mesh(fuselageGeo)
-  fuselage.position.z = 0
+  fuselage.position.z = -0.2
   group.add(fuselage)
 
-  // Cockpit canopy
-  const canopyGeo = new THREE.SphereGeometry(0.35, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2)
-  canopyGeo.scale(1, 0.6, 1.5)
+  // Cockpit Bubble Canopy (smooth glass dome)
+  const canopyGeo = new THREE.SphereGeometry(0.38, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2)
+  canopyGeo.scale(0.9, 0.7, 1.8)
   canopyGeo.rotateX(Math.PI / 2)
   const canopy = new THREE.Mesh(canopyGeo)
-  canopy.position.set(0, 0.25, -0.5)
+  canopy.position.set(0, 0.28, -0.8)
   group.add(canopy)
 
-  // Main wings
-  const wingGeo = new THREE.BoxGeometry(6, 0.1, 1.5)
+  // Swept Main Delta Wings (aerodynamic stealth wings)
+  const wingGeo = new THREE.BoxGeometry(5.8, 0.08, 2.2, 8, 2, 8)
   const wing = new THREE.Mesh(wingGeo)
-  wing.position.set(0, -0.05, -0.5)
+  wing.position.set(0, -0.05, -0.2)
   group.add(wing)
 
-  // Wing tips (angled up slightly for style)
-  const tipGeo = new THREE.ConeGeometry(0.15, 0.6, 4)
-  tipGeo.rotateX(-Math.PI / 2)
-  const leftTip = new THREE.Mesh(tipGeo)
-  leftTip.position.set(-3, -0.1, -0.5)
-  leftTip.rotation.z = -0.3
-  group.add(leftTip)
+  // Twin Canted Vertical Stabilizers (F-22 20° outward angle)
+  const finGeo = new THREE.BoxGeometry(0.08, 1.3, 1.1, 2, 4, 4)
 
-  const rightTip = new THREE.Mesh(tipGeo)
-  rightTip.position.set(3, -0.1, -0.5)
-  rightTip.rotation.z = 0.3
-  group.add(rightTip)
+  const leftFin = new THREE.Mesh(finGeo)
+  leftFin.position.set(-0.8, 0.65, 1.2)
+  leftFin.rotation.z = -0.35 // 20 deg angle
+  group.add(leftFin)
 
-  // Vertical tail fin
-  const tailGeo = new THREE.BoxGeometry(0.15, 1.2, 0.8)
-  const tail = new THREE.Mesh(tailGeo)
-  tail.position.set(0, 0.5, 1.5)
-  group.add(tail)
+  const rightFin = new THREE.Mesh(finGeo)
+  rightFin.position.set(0.8, 0.65, 1.2)
+  rightFin.rotation.z = 0.35
+  group.add(rightFin)
 
-  // Horizontal stabilizers
-  const stabGeo = new THREE.BoxGeometry(2, 0.08, 0.6)
+  // Horizontal Elevator Stabilizers
+  const stabGeo = new THREE.BoxGeometry(2.4, 0.06, 0.9)
   const stab = new THREE.Mesh(stabGeo)
-  stab.position.set(0, 0, 1.8)
+  stab.position.set(0, -0.02, 1.5)
   group.add(stab)
 
-  // Engine nozzles (two)
-  const nozzleGeo = new THREE.CylinderGeometry(0.25, 0.15, 0.4, 8)
+  // Dual Vectoring Afterburner Engine Nozzles
+  const nozzleGeo = new THREE.CylinderGeometry(0.22, 0.18, 0.5, 32)
   nozzleGeo.rotateX(Math.PI / 2)
 
   const leftNozzle = new THREE.Mesh(nozzleGeo)
-  leftNozzle.position.set(-0.5, -0.1, 1.6)
+  leftNozzle.position.set(-0.4, -0.05, 1.5)
   group.add(leftNozzle)
 
   const rightNozzle = new THREE.Mesh(nozzleGeo)
-  rightNozzle.position.set(0.5, -0.1, 1.6)
+  rightNozzle.position.set(0.4, -0.05, 1.5)
   group.add(rightNozzle)
 
-  // Gun positions (for muzzle flash / projectile spawn)
+  // Gun positions
   group.userData.gunPositions = [
-    new THREE.Vector3(-0.6, 0, -1.5),
-    new THREE.Vector3(0.6, 0, -1.5)
+    new THREE.Vector3(-0.5, 0, -2.0),
+    new THREE.Vector3(0.5, 0, -2.0)
   ]
 
-  // Engine positions (for trails)
+  // Engine positions
   group.userData.enginePositions = [
-    new THREE.Vector3(-0.5, -0.1, 1.8),
-    new THREE.Vector3(0.5, -0.1, 1.8)
+    new THREE.Vector3(-0.4, -0.05, 1.7),
+    new THREE.Vector3(0.4, -0.05, 1.7)
   ]
 
-  // Bounding sphere for collision
-  group.userData.collisionRadius = 1.2
-
+  group.userData.collisionRadius = 1.4
   return group
 }
 
@@ -277,20 +277,27 @@ export function createStarfieldGeometry(count = 3000, radius = 500) {
   return geo
 }
 
-// Terrain geometry (infinite scrolling ground)
-export function createTerrainGeometry(width = 2000, depth = 2000, segments = 64) {
+// Sample elevation for terrain collision
+export function getTerrainHeight(x, z) {
+  const mountain = Math.sin(x * 0.008) * Math.cos(z * 0.008) * 28
+  const ridge = Math.sin(x * 0.02 + z * 0.015) * 12
+  const detail = Math.sin(x * 0.06) * Math.cos(z * 0.06) * 3
+  return -50 + mountain + ridge + detail
+}
+
+// High-density realistic smooth terrain geometry
+export function createTerrainGeometry(width = 2000, depth = 2000, segments = 128) {
   const geo = new THREE.PlaneGeometry(width, depth, segments, segments)
   geo.rotateX(-Math.PI / 2)
 
-  // Add some vertex displacement for hills
   const positions = geo.attributes.position
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i)
     const z = positions.getZ(i)
-    // Low-frequency noise for hills
-    const hill = Math.sin(x * 0.01) * Math.cos(z * 0.01) * 15
-    const detail = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3
-    positions.setY(i, hill + detail)
+    const mountain = Math.sin(x * 0.008) * Math.cos(z * 0.008) * 28
+    const ridge = Math.sin(x * 0.02 + z * 0.015) * 12
+    const detail = Math.sin(x * 0.06) * Math.cos(z * 0.06) * 3
+    positions.setY(i, mountain + ridge + detail)
   }
   geo.computeVertexNormals()
 

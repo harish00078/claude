@@ -1,43 +1,48 @@
 import * as THREE from 'three'
 
-// Player jet materials
+// Player jet photorealistic PBR materials
 export function createJetMaterials() {
   return {
-    body: new THREE.MeshStandardMaterial({
-      color: 0x3a6ea5,
-      metalness: 0.7,
-      roughness: 0.3,
-      flatShading: true
+    body: new THREE.MeshPhysicalMaterial({
+      color: 0x4a5568, // Tactical Stealth Slate Grey
+      metalness: 0.85,
+      roughness: 0.2,
+      clearcoat: 0.8,
+      clearcoatRoughness: 0.1,
+      reflectivity: 0.9,
+      flatShading: false
     }),
     canopy: new THREE.MeshPhysicalMaterial({
-      color: 0x88c0ff,
-      metalness: 0.2,
-      roughness: 0.1,
-      transmission: 0.8,
-      thickness: 0.5,
+      color: 0x112233,
+      metalness: 0.1,
+      roughness: 0.05,
+      transmission: 0.9,
+      thickness: 0.8,
       transparent: true,
-      opacity: 0.6,
-      flatShading: true
+      opacity: 0.7,
+      ior: 1.52,
+      reflectivity: 1.0,
+      flatShading: false
     }),
-    dark: new THREE.MeshStandardMaterial({
-      color: 0x1a2a3a,
-      metalness: 0.5,
-      roughness: 0.5,
-      flatShading: true
+    dark: new THREE.MeshPhysicalMaterial({
+      color: 0x1a202c,
+      metalness: 0.9,
+      roughness: 0.35,
+      flatShading: false
     }),
     engine: new THREE.MeshStandardMaterial({
       color: 0x111111,
-      metalness: 0.9,
-      roughness: 0.2,
-      flatShading: true,
-      emissive: 0xff4400,
-      emissiveIntensity: 0.2
+      metalness: 0.95,
+      roughness: 0.15,
+      flatShading: false,
+      emissive: 0xff5500,
+      emissiveIntensity: 0.8
     }),
     accent: new THREE.MeshStandardMaterial({
-      color: 0xff6b35,
-      metalness: 0.3,
-      roughness: 0.7,
-      flatShading: true
+      color: 0xdd6b20,
+      metalness: 0.7,
+      roughness: 0.3,
+      flatShading: false
     })
   }
 }
@@ -46,18 +51,18 @@ export function createJetMaterials() {
 export function createDroneMaterials() {
   return {
     body: new THREE.MeshStandardMaterial({
-      color: 0xcc3333,
-      metalness: 0.4,
-      roughness: 0.6,
-      flatShading: true,
+      color: 0xd63031,
+      metalness: 0.8,
+      roughness: 0.25,
+      flatShading: false,
       emissive: 0x330000,
       emissiveIntensity: 0.2
     }),
     wing: new THREE.MeshStandardMaterial({
-      color: 0xaa2222,
-      metalness: 0.3,
-      roughness: 0.7,
-      flatShading: true
+      color: 0xb2bec3,
+      metalness: 0.7,
+      roughness: 0.3,
+      flatShading: false
     })
   }
 }
@@ -65,24 +70,24 @@ export function createDroneMaterials() {
 export function createInterceptorMaterials() {
   return {
     body: new THREE.MeshStandardMaterial({
-      color: 0xffaa00,
-      metalness: 0.6,
-      roughness: 0.4,
-      flatShading: true,
+      color: 0xe1b12c,
+      metalness: 0.85,
+      roughness: 0.2,
+      flatShading: false,
       emissive: 0x442200,
       emissiveIntensity: 0.3
     }),
     wing: new THREE.MeshStandardMaterial({
-      color: 0xcc8800,
-      metalness: 0.4,
-      roughness: 0.5,
-      flatShading: true
+      color: 0x2f3640,
+      metalness: 0.9,
+      roughness: 0.2,
+      flatShading: false
     }),
     fin: new THREE.MeshStandardMaterial({
       color: 0xee9900,
-      metalness: 0.5,
-      roughness: 0.5,
-      flatShading: true
+      metalness: 0.8,
+      roughness: 0.3,
+      flatShading: false
     })
   }
 }
@@ -90,51 +95,52 @@ export function createInterceptorMaterials() {
 export function createBomberMaterials() {
   return {
     body: new THREE.MeshStandardMaterial({
-      color: 0x444444,
-      metalness: 0.5,
-      roughness: 0.5,
-      flatShading: true
+      color: 0x353b48,
+      metalness: 0.9,
+      roughness: 0.3,
+      flatShading: false
     }),
     wing: new THREE.MeshStandardMaterial({
-      color: 0x333333,
-      metalness: 0.4,
-      roughness: 0.6,
-      flatShading: true
+      color: 0x2f3640,
+      metalness: 0.85,
+      roughness: 0.35,
+      flatShading: false
     }),
     bay: new THREE.MeshStandardMaterial({
-      color: 0x222222,
-      metalness: 0.3,
-      roughness: 0.8,
-      flatShading: true
+      color: 0x192a56,
+      metalness: 0.9,
+      roughness: 0.2,
+      flatShading: false
     })
   }
 }
 
 export function createAceMaterials() {
   return {
-    body: new THREE.MeshStandardMaterial({
-      color: 0x8800ff,
-      metalness: 0.7,
-      roughness: 0.3,
-      flatShading: true,
+    body: new THREE.MeshPhysicalMaterial({
+      color: 0x4400aa,
+      metalness: 0.9,
+      roughness: 0.15,
+      clearcoat: 0.9,
+      flatShading: false,
       emissive: 0x220044,
       emissiveIntensity: 0.4
     }),
     canopy: new THREE.MeshPhysicalMaterial({
-      color: 0xaa44ff,
-      metalness: 0.2,
-      roughness: 0.1,
-      transmission: 0.7,
+      color: 0x00d2d3,
+      metalness: 0.1,
+      roughness: 0.05,
+      transmission: 0.9,
       thickness: 0.5,
       transparent: true,
-      opacity: 0.5,
-      flatShading: true
+      opacity: 0.7,
+      flatShading: false
     }),
     wing: new THREE.MeshStandardMaterial({
-      color: 0x6600cc,
-      metalness: 0.5,
-      roughness: 0.4,
-      flatShading: true
+      color: 0x192a56,
+      metalness: 0.85,
+      roughness: 0.25,
+      flatShading: false
     })
   }
 }
@@ -252,13 +258,13 @@ export function createStarfieldMaterial() {
   })
 }
 
-// Terrain material
+// Terrain material (Realistic PBR natural earth)
 export function createTerrainMaterial() {
   return new THREE.MeshStandardMaterial({
-    color: 0x1a3a2a,
-    metalness: 0,
-    roughness: 0.9,
-    flatShading: true,
+    color: 0x2e4a38,
+    metalness: 0.1,
+    roughness: 0.8,
+    flatShading: false,
     side: THREE.DoubleSide
   })
 }

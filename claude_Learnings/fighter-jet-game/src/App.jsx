@@ -2,8 +2,10 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import GameCanvas from './components/GameCanvas'
 import HUD from './components/HUD'
+import { SimulatorHUD } from './components/SimulatorHUD'
 import StartScreen from './components/StartScreen'
 import GameOverScreen from './components/GameOverScreen'
+import { MobileControls } from './components/MobileControls'
 
 const GAME_STATES = {
   MENU: 'menu',
@@ -21,9 +23,45 @@ function App() {
   const [boostRatio, setBoostRatio] = useState(1)
   const [speedRatio, setSpeedRatio] = useState(0)
   const [combo, setCombo] = useState(0)
+  const [touchInput, setTouchInput] = useState({ up: false, down: false, left: false, right: false, boost: false, fire: false })
+
+  // Flight Sim Telemetry State
+  const [airspeed, setAirspeed] = useState(80)
+  const [altitude, setAltitude] = useState(500)
+  const [throttle, setThrottle] = useState(60)
+  const [isStalled, setIsStalled] = useState(false)
+  const [cameraMode, setCameraMode] = useState('cockpit')
 
   // Refs for game systems (initialized in GameCanvas)
   const gameSystemsRef = useRef(null)
+
+  // Telemetry loop for HUD
+  useEffect(() => {
+    if (gameState !== GAME_STATES.PLAYING) return
+    const interval = setInterval(() => {
+      if (gameSystemsRef.current) {
+        setAirspeed(gameSystemsRef.current.getAirspeedKnots() || 0)
+        setAltitude(gameSystemsRef.current.getAltitudeFeet() || 0)
+        setThrottle(gameSystemsRef.current.getThrottlePercent() || 0)
+        setIsStalled(gameSystemsRef.current.isStalled() || false)
+      }
+    }, 100)
+    return () => clearInterval(interval)
+  }, [gameState])
+
+  // Key C camera mode toggle
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key.toLowerCase() === 'c' && gameState === GAME_STATES.PLAYING) {
+        if (gameSystemsRef.current) {
+          const newMode = gameSystemsRef.current.toggleCameraMode()
+          setCameraMode(newMode)
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [gameState])
 
   useEffect(() => {
     try {
@@ -118,6 +156,7 @@ function App() {
         <GameCanvas
           ref={gameSystemsRef}
           gameState={gameState}
+          touchInput={touchInput}
           onScoreChange={onScoreChange}
           onHighScoreChange={onHighScoreChange}
           onWaveChange={onWaveChange}
@@ -131,6 +170,26 @@ function App() {
       </Canvas>
 
       {/* UI Overlays - rendered outside Canvas for DOM overlay */}
+      {gameState === GAME_STATES.PLAYING && (
+        <>
+          <MobileControls onInputChange={setTouchInput} />
+          <SimulatorHUD
+            airspeed={airspeed}
+            altitude={altitude}
+            throttle={throttle}
+            isStalled={isStalled}
+            cameraMode={cameraMode}
+            onToggleCamera={() => {
+              if (gameSystemsRef.current) {
+                const newMode = gameSystemsRef.current.toggleCameraMode()
+                setCameraMode(newMode)
+              }
+            }}
+            gameState={gameState}
+          />
+        </>
+      )}
+
       <HUD
         score={score}
         highScore={highScore}

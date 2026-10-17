@@ -1,0 +1,178 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R >> >> >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 9 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R >> >> >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+7 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+8 0 obj
+<< /Length 6886 >>
+stream
+q 1.5 w 0.06 0.12 0.22 rg 0.15 0.35 0.65 RG 40.0 725.0 532.0 45.0 re B Q
+q 1.00 1.00 1.00 rg BT /F3 15 Tf 55.0 748.0 Td (JET STREAK - FIGHTER JET SIMULATOR) Tj ET Q
+q 0.40 0.80 1.00 rg BT /F2 10 Tf 55.0 733.0 Td (Runtime Architecture & Component Context) Tj ET Q
+q 1 w 0.97 0.98 1.00 rg 0.80 0.85 0.92 RG 40.0 245.0 532.0 465.0 re B Q
+q 0.10 0.20 0.40 rg BT /F3 11 Tf 55.0 688.0 Td (SYSTEM RUNTIME ARCHITECTURE) Tj ET Q
+q 1.5 w 0.92 0.95 1.00 rg 0.30 0.50 0.85 RG 60.0 560.0 492.0 115.0 re B Q
+q 0.10 0.25 0.60 rg BT /F3 12 Tf 275.0 655.0 Td (React 18) Tj ET Q
+q 1.2 w 1.00 1.00 1.00 rg 0.00 0.65 0.40 RG 80.0 575.0 205.0 65.0 re B Q
+q 0.00 0.50 0.30 rg BT /F3 10 Tf 130.0 622.0 Td (SimulatorHUD) Tj ET Q
+q 0.25 0.35 0.30 rg BT /F2 9 Tf 105.0 605.0 Td (\(Knots, MSL Altitude, Stall\)) Tj ET Q
+q 0.35 0.40 0.40 rg BT /F2 8.5 Tf 105.0 588.0 Td (Pitch/Roll Horizon, Throttle Gauge) Tj ET Q
+q 1.2 w 1.00 1.00 1.00 rg 0.85 0.45 0.10 RG 325.0 575.0 205.0 65.0 re B Q
+q 0.70 0.30 0.00 rg BT /F3 10 Tf 375.0 622.0 Td (MobileControls) Tj ET Q
+q 0.40 0.35 0.30 rg BT /F2 9 Tf 350.0 605.0 Td (\(Virtual Touch D-Pad / Buttons\)) Tj ET Q
+q 0.40 0.40 0.40 rg BT /F2 8.5 Tf 350.0 588.0 Td (Pitch, Yaw, Roll, Boost & Fire) Tj ET Q
+q 1.5 w 0.00 0.65 0.40 RG 180.0 500.0 m 180.0 570.0 l S Q
+q 0.00 0.65 0.40 rg 180.0 570.0 m 177.0 564.0 l 183.0 564.0 l f Q
+q 0.00 0.55 0.35 rg BT /F3 8.5 Tf 80.0 532.0 Td (100ms Telemetry Stream) Tj ET Q
+q 1.5 w 0.85 0.45 0.10 RG 425.0 570.0 m 425.0 500.0 l S Q
+q 0.85 0.45 0.10 rg 425.0 500.0 m 422.0 506.0 l 428.0 506.0 l f Q
+q 0.75 0.35 0.05 rg BT /F3 8.5 Tf 435.0 532.0 Td (Input State \(60 Hz\)) Tj ET Q
+q 1.5 w 0.94 0.96 0.98 rg 0.20 0.30 0.50 RG 60.0 260.0 492.0 235.0 re B Q
+q 0.15 0.20 0.35 rg BT /F3 12 Tf 245.0 475.0 Td (Three.js / Canvas Engine) Tj ET Q
+q 1.2 w 1.00 1.00 1.00 rg 0.20 0.40 0.70 RG 80.0 375.0 452.0 85.0 re B Q
+q 0.10 0.30 0.65 rg BT /F3 11 Tf 275.0 442.0 Td (PlayerJet) Tj ET Q
+q 0.20 0.25 0.30 rg BT /F2 9.5 Tf 100.0 422.0 Td (* 6DOF Quaternions \(Pitch/Yaw/Roll\)) Tj ET Q
+q 0.20 0.25 0.30 rg BT /F2 9.5 Tf 310.0 422.0 Td (* Cockpit & Chase Camera Modes [C]) Tj ET Q
+q 0.20 0.25 0.30 rg BT /F2 9.5 Tf 100.0 402.0 Td (* Aerodynamics \(Dynamic Lift & Drag\)) Tj ET Q
+q 0.20 0.25 0.30 rg BT /F2 9.5 Tf 310.0 402.0 Td (* Gravity \(-9.81 m/s^2\) & Stall Physics) Tj ET Q
+q 0.40 0.45 0.50 rg BT /F2 8.5 Tf 100.0 385.0 Td (* Dynamic Control Authority \(f\(v\)\)) Tj ET Q
+q 0.40 0.45 0.50 rg BT /F2 8.5 Tf 310.0 385.0 Td (* Auto-leveling Horizon Alignment \(slerp\)) Tj ET Q
+q 1.2 w 0.30 0.40 0.50 RG 305.0 375.0 m 305.0 355.0 l S Q
+q 1.2 w 0.30 0.40 0.50 RG 155.0 355.0 m 455.0 355.0 l S Q
+q 1.2 w 0.30 0.40 0.50 RG 155.0 355.0 m 155.0 345.0 l S Q
+q 0.30 0.40 0.50 rg 155.0 345.0 m 152.0 351.0 l 158.0 351.0 l f Q
+q 1.2 w 0.30 0.40 0.50 RG 305.0 355.0 m 305.0 345.0 l S Q
+q 0.30 0.40 0.50 rg 305.0 345.0 m 302.0 351.0 l 308.0 351.0 l f Q
+q 1.2 w 0.30 0.40 0.50 RG 455.0 355.0 m 455.0 345.0 l S Q
+q 0.30 0.40 0.50 rg 455.0 345.0 m 452.0 351.0 l 458.0 351.0 l f Q
+q 1 w 1.00 1.00 1.00 rg 0.75 0.20 0.20 RG 80.0 275.0 140.0 68.0 re B Q
+q 0.70 0.10 0.10 rg BT /F3 9.5 Tf 110.0 327.0 Td (EnemyManager) Tj ET Q
+q 0.30 0.30 0.30 rg BT /F2 8.5 Tf 92.0 310.0 Td (* 2.5x Scale Planes) Tj ET Q
+q 0.30 0.30 0.30 rg BT /F2 8.5 Tf 92.0 296.0 Td (* 150 Target Cap) Tj ET Q
+q 0.30 0.30 0.30 rg BT /F2 8.5 Tf 92.0 282.0 Td (* Reticle Indicators) Tj ET Q
+q 1 w 1.00 1.00 1.00 rg 0.20 0.55 0.75 RG 235.0 275.0 142.0 68.0 re B Q
+q 0.10 0.40 0.60 rg BT /F3 9.5 Tf 255.0 327.0 Td (ProjectileSystem) Tj ET Q
+q 0.30 0.30 0.30 rg BT /F2 8.5 Tf 245.0 310.0 Td (* 3D Spatial Grid) Tj ET Q
+q 0.30 0.30 0.30 rg BT /F2 8.5 Tf 245.0 296.0 Td (* O\(1\) Collision Hash) Tj ET Q
+q 0.30 0.30 0.30 rg BT /F2 8.5 Tf 245.0 282.0 Td (* Laser / Missile / Mine) Tj ET Q
+q 1 w 1.00 1.00 1.00 rg 0.55 0.25 0.75 RG 390.0 275.0 142.0 68.0 re B Q
+q 0.45 0.15 0.65 rg BT /F3 9.5 Tf 420.0 327.0 Td (Multiplayer) Tj ET Q
+q 0.30 0.30 0.30 rg BT /F2 8.5 Tf 400.0 310.0 Td (* Socket.IO Client) Tj ET Q
+q 0.30 0.30 0.30 rg BT /F2 8.5 Tf 400.0 296.0 Td (* 20 Hz State Sync) Tj ET Q
+q 0.30 0.30 0.30 rg BT /F2 8.5 Tf 400.0 282.0 Td (* Peer Slerp / Lerp) Tj ET Q
+q 1 w 0.10 0.12 0.16 rg 0.20 0.25 0.30 RG 40.0 45.0 532.0 185.0 re B Q
+q 0.00 1.00 0.60 rg BT /F3 9.5 Tf 55.0 212.0 Td (VERBATIM CONTEXT SPECIFICATION) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 195.0 Td (+--------------------------------------------------------+) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 188.2 Td (|                        React 18                        |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 181.4 Td (|   +--------------------+      +--------------------+   |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 174.6 Td (|   |   SimulatorHUD     |      |   MobileControls   |   |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 167.8 Td (|   | \(Knots, MSL, Stall\)|      |  \(Touch D-Pad/Btns\)|   |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 161.0 Td (|   +---------^----------+      +---------v----------+   |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 154.2 Td (+-------------|---------------------------|--------------+) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 147.4 Td (              | 100ms Telemetry           | Input State   ) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 140.6 Td (+-------------v---------------------------v--------------+) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 133.8 Td (|                  Three.js / Canvas                     |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 127.0 Td (|  +--------------------------------------------------+  |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 120.2 Td (|  |                     PlayerJet                    |  |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 113.4 Td (|  |  - 6DOF Quaternions     - Cockpit / Chase Cam    |  |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 106.6 Td (|  |  - Aerodynamics \(L/D\)   - Stall & Gravity Physics|  |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 99.8 Td (|  +-----------------------v--------------------------+  |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 93.0 Td (|                          |                             |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 86.2 Td (|     +--------------------+--------------------+        |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 79.4 Td (|     v                    v                    v        |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 72.6 Td (| EnemyManager      ProjectileSystem     Multiplayer     |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 65.8 Td (| \(2.5x Scale,      \(3D Spatial Grid,    \(Socket.IO,     |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 59.0 Td (| 150 Target Max\)   O\(1\) Broadphase\)     Peer Lerp\)      |) Tj ET Q
+q 0.80 0.90 0.95 rg BT /F1 6.6 Tf 55.0 52.2 Td (+--------------------------------------------------------+) Tj ET Q
+endstream
+endobj
+9 0 obj
+<< /Length 5611 >>
+stream
+q 1.5 w 0.06 0.12 0.22 rg 0.15 0.35 0.65 RG 40.0 725.0 532.0 45.0 re B Q
+q 1.00 1.00 1.00 rg BT /F3 15 Tf 55.0 748.0 Td (TECHNICAL SUBSYSTEM SPECIFICATIONS) Tj ET Q
+q 0.40 0.80 1.00 rg BT /F2 10 Tf 55.0 733.0 Td (In-Depth Breakdown of Flight Mechanics, Combat & Networking) Tj ET Q
+q 1 w 0.98 0.99 1.00 rg 0.85 0.88 0.95 RG 40.0 520.0 532.0 185.0 re B Q
+q 0.15 0.25 0.50 rg BT /F3 11 Tf 55.0 688.0 Td (1. Aerodynamics & 6DOF Flight Physics Model) Tj ET Q
+q 0.30 0.30 0.30 rg BT /F2 9.5 Tf 55.0 670.0 Td (Implemented in src/systems/PlayerJet.js:) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 652.0 Td (* Net Force Vector Equation: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 210.0 652.0 Td (F_net = \(Thrust - Drag\) * Forward + Lift * Up + Gravity) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 636.0 Td (* Dynamic Lift & Drag: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 185.0 636.0 Td (Lift = v^2 * LIFT_COEFF \(0.0028\); Drag = v^2 * DRAG_COEFF \(0.0008\).) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 620.0 Td (* Stall Dynamics: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 160.0 620.0 Td (Airspeed threshold at 22 m/s \(~44 knots\). 80% loss of lift on stall, inducing) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 65.0 606.0 Td (continuous downward pitch recovery torque until pilot dives to regain airspeed.) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 590.0 Td (* Dynamic Surface Authority: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 210.0 590.0 Td (Control responsiveness scales with sqrt\(v / v_cruise\), preventing sudden) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 65.0 576.0 Td (twitchy movements at low airspeeds and stiffening control surfaces during high-speed dives.) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 560.0 Td (* Dual Camera Perspectives: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 210.0 560.0 Td (Cockpit \(first-person internal pilot view\) and Chase \(trailing 3rd person\).) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 65.0 546.0 Td (Switchable instantaneously via the C key or HUD camera toggle.) Tj ET Q
+q 1 w 0.98 0.99 1.00 rg 0.85 0.88 0.95 RG 40.0 360.0 532.0 145.0 re B Q
+q 0.15 0.25 0.50 rg BT /F3 11 Tf 55.0 488.0 Td (2. UI Avionics & Responsive Touch Controls) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 470.0 Td (* Telemetry Pipeline: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 180.0 470.0 Td (GameCanvas exposes calibrated getters to App.jsx on a 100ms ticker interval:) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 65.0 456.0 Td (getAirspeedKnots\(\) [speed * 2.2], getAltitudeFeet\(\) [\(pos.y + 50\) * 3.28], getThrottlePercent\(\).) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 440.0 Td (* SimulatorHUD Overlay: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 190.0 440.0 Td (Renders altitude/speed vertical tape gauges, horizon boresight, and stall alert banner.) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 424.0 Td (* Mobile Touch System: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 190.0 424.0 Td (Virtual on-screen D-Pad handling 8-way directional vector pitch/yaw/roll and) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 65.0 410.0 Td (dedicated action triggers for boost thrust and cannon fire.) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 394.0 Td (* Zero DOM Drag Overhead: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 210.0 394.0 Td (Decoupled DOM overlays render outside WebGL Canvas with pointer-events: none) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 65.0 380.0 Td (to eliminate interference with Three.js rendering performance.) Tj ET Q
+q 1 w 0.98 0.99 1.00 rg 0.85 0.88 0.95 RG 40.0 150.0 532.0 195.0 re B Q
+q 0.15 0.25 0.50 rg BT /F3 11 Tf 55.0 328.0 Td (3. Dogfight Scaling, Spatial Grid & Real-time Multiplayer) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 310.0 Td (* 3D Hash Spatial Partitioning: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 230.0 310.0 Td (SpatialGrid partitions 3D space into 50x50x50 unit buckets. Bullets query) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 65.0 296.0 Td (only nearby buckets, dropping broadphase collision cost from O\(N * M\) to O\(1\).) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 280.0 Td (* Intensive Dogfight Capacity: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 215.0 280.0 Td (Enemy pool scaled to 150 active fighters with 2.5x enlarged mesh size and) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 65.0 266.0 Td (overhead reticle rings for sharp engagement contrast at supersonic speeds.) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 250.0 Td (* Multiplayer Synchronization: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 215.0 250.0 Td (Socket.IO backend broadcasts positional coordinates, quaternions, speed, and) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 65.0 236.0 Td (weapon discharges at 20 updates per second \(50ms interval\).) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 220.0 Td (* Peer Smoothing \(Lerp / Slerp\): ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 225.0 220.0 Td (Remote aircraft interpolate positions via lerp and orientations via quaternion slerp,) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 65.0 206.0 Td (delivering fluid 60 FPS motion without network stutter.) Tj ET Q
+q 0.10 0.10 0.10 rg BT /F3 9 Tf 65.0 190.0 Td (* Procedural Audio Synthesis: ) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 210.0 190.0 Td (Zero sound asset files required. AudioSystem synthesizes dynamic engine hums,) Tj ET Q
+q 0.20 0.30 0.40 rg BT /F2 9 Tf 65.0 176.0 Td (missile whooshes, and noise-buffer explosions directly via the Web Audio API.) Tj ET Q
+q 1 w 0.95 0.96 0.98 rg 0.85 0.88 0.92 RG 40.0 50.0 532.0 35.0 re B Q
+q 0.45 0.50 0.55 rg BT /F2 8.5 Tf 55.0 64.0 Td (Generated for Jet Streak \(Fighter Jet Game\) * Connected Workspace: /Users/macbook/Code) Tj ET Q
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000121 00000 n 
+0000000267 00000 n 
+0000000413 00000 n 
+0000000481 00000 n 
+0000000551 00000 n 
+0000000626 00000 n 
+0000007564 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+13227
+%%EOF

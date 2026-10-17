@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { createJetGeometry } from '../utils/geometry'
 import { createJetMaterials } from '../utils/materials'
 import { clamp, lerp, approach, wrapAngle, degToRad } from '../utils/math'
@@ -8,27 +9,39 @@ export class PlayerJet {
     this.scene = scene
     this.group = null
     this.camera = null
+    this.fallbackMesh = null
+    this.realModel = null
 
-    // Movement state
-    this.position = new THREE.Vector3(0, 0, 0)
-    this.rotation = new THREE.Euler(0, 0, 0) // pitch, yaw, roll
-    this.velocity = new THREE.Vector3(0, 0, 0)
-    this.speed = 0
-    this.targetSpeed = 0
+    // Movement & Aerodynamic Flight Sim State
+    this.position = new THREE.Vector3(0, 50, 0)
+    this.rotation = new THREE.Euler(0, 0, 0)
+    this.quaternion = new THREE.Quaternion()
+    this.speed = 55
+    this.velocity = new THREE.Vector3(0, 0, -55)
+    this.throttle = 0.7
+    this.airspeedKnots = 110
+    this.altitudeFeet = 600
 
-    // Constants
-    this.MAX_SPEED = 80
-    this.BOOST_SPEED = 140
-    this.ACCELERATION = 30
-    this.DECELERATION = 15
-    this.TURN_RATE = 1.5 // rad/s
-    this.ROLL_RATE = 2.5
-    this.MAX_PITCH = degToRad(80)
-    this.MAX_ROLL = degToRad(60)
+    // Aerodynamic Physics Constants
+    this.STALL_SPEED = 20
+    this.CRUISE_SPEED = 55
+    this.MAX_THROTTLE_SPEED = 120
+    this.GRAVITY = 9.81
+    this.LIFT_COEFF = 0.003924
+    this.DRAG_COEFF = 0.012
+    this.isStalled = false
+
+    // Control Surface Authorities
+    this.pitchRate = 2.0
+    this.yawRate = 1.5
+    this.rollRate = 3.2
+
+    // Default Camera Mode: 'chase' (toggleable to 'cockpit' via C)
+    this.cameraMode = 'chase'
 
     // Shooting
     this.fireCooldown = 0
-    this.fireRate = 0.1 // seconds between shots
+    this.fireRate = 0.1
     this.gunIndex = 0
 
     // Health
@@ -41,17 +54,15 @@ export class PlayerJet {
     // Boost fuel
     this.boostFuel = 100
     this.maxBoostFuel = 100
-    this.boostConsumption = 25 // per second
-    this.boostRegen = 10 // per second
+    this.boostConsumption = 25
+    this.boostRegen = 10
 
     // Visual effects
     this.engineTrailLeft = null
     this.engineTrailRight = null
-    this.trailPointsLeft = []
-    this.trailPointsRight = []
     this.maxTrailPoints = 40
 
-    // Input state (set externally)
+    // Input state
     this.input = {
       pitch: 0,
       yaw: 0,
@@ -64,42 +75,87 @@ export class PlayerJet {
   }
 
   init() {
-    // Create jet mesh
-    this.group = createJetGeometry()
+    this.group = new THREE.Group()
     this.scene.add(this.group)
 
+    // Set default hardpoints
+    this.group.userData = {
+      gunPositions: [
+        new THREE.Vector3(-0.7, 0, -2.0),
+        new THREE.Vector3(0.7, 0, -2.0)
+      ],
+      enginePositions: [
+        new THREE.Vector3(-0.4, 0, 2.0),
+        new THREE.Vector3(0.4, 0, 2.0)
+      ],
+      collisionRadius: 2.2
+    }
+
+    // Immediate procedural fallback while GLB model loads
+    this.fallbackMesh = createJetGeometry()
+    this.group.add(this.fallbackMesh)
     this.materials = createJetMaterials()
-    this.group.traverse((child) => {
-      if (child.isMesh) {
-        const name = child.geometry.type.toLowerCase()
-        if (name.includes('cone') || (name.includes('box') && child.position.z < 1)) {
-          child.material = this.materials.body
-        } else if (name.includes('sphere')) {
-          child.material = this.materials.canopy
-        } else if (name.includes('cylinder')) {
-          child.material = this.materials.engine
-        } else {
-          child.material = this.materials.dark
+
+    // Asynchronously load realistic 3D fighter jet GLB model
+    const loader = new GLTFLoader()
+    loader.load(
+      '/assets/models/fighter-jet.glb',
+      (gltf) => {
+        if (this.fallbackMesh) {
+          this.group.remove(this.fallbackMesh)
+          this.fallbackMesh = null
         }
+
+        const model = gltf.scene
+
+        // Center model bounds so pivot is at center of gravity
+        const box = new THREE.Box3().setFromObject(model)
+        const center = new THREE.Vector3()
+        box.getCenter(center)
+        model.position.x -= center.x
+        model.position.y -= center.y
+        model.position.z -= center.z
+
+        const container = new THREE.Group()
+        container.add(model)
+        container.scale.setScalar(0.24) // Perfectly scaled to the scene
+
+        // Enable real-time shadow casting and PBR properties
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true
+            child.receiveShadow = true
+            if (child.material) {
+              child.material.roughness = 0.35
+              child.material.metalness = 0.7
+              child.material.needsUpdate = true
+            }
+          }
+        })
+
+        this.realModel = container
+        this.group.add(container)
+        console.log('✈️ Photorealistic Fighter Jet 3D Model Loaded Successfully!')
+      },
+      undefined,
+      (err) => {
+        console.warn('Could not load GLB fighter jet, fallback active:', err)
       }
-    })
+    )
 
     // Create camera rig
     this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000)
-    this.camera.position.set(0, 3, 8)
+    this.camera.position.set(0, 2.8, 8)
     this.camera.lookAt(0, 0, 0)
 
-    // Camera offset for third-person view
-    this.cameraOffset = new THREE.Vector3(0, 3, 8)
-    this.cameraLookAtOffset = new THREE.Vector3(0, 0, -5)
-
-    // Engine trails (will be created by ParticleSystem)
+    this.cameraOffset = new THREE.Vector3(0, 2.8, 8)
+    this.cameraLookAtOffset = new THREE.Vector3(0, 0.4, -6)
   }
 
   updateInput(input) {
-    this.input.pitch = (input.up ? -1 : 0) + (input.down ? 1 : 0)
-    this.input.yaw = (input.left ? -1 : 0) + (input.right ? 1 : 0)
-    this.input.roll = (input.left ? -1 : 0) + (input.right ? 1 : 0)
+    this.input.pitch = (input.up ? 1 : 0) + (input.down ? -1 : 0)
+    this.input.yaw = (input.left ? 1 : 0) + (input.right ? -1 : 0)
+    this.input.roll = (input.left ? 1 : 0) + (input.right ? -1 : 0)
     this.input.boost = input.boost
     this.input.fire = input.fire
   }
@@ -117,13 +173,11 @@ export class PlayerJet {
   updateTrails(deltaTime, particleSystem) {
     if (!particleSystem) return
 
-    // Lazily create the two engine trails
     if (!this.engineTrailLeft) {
       this.engineTrailLeft = particleSystem.createTrail(this.maxTrailPoints)
       this.engineTrailRight = particleSystem.createTrail(this.maxTrailPoints)
     }
 
-    // Trails only show when moving
     const active = this.speed > 5
     this.engineTrailLeft.active = active
     this.engineTrailRight.active = active
@@ -136,7 +190,6 @@ export class PlayerJet {
       return
     }
 
-    // Update world matrix so engine positions are current
     this.group.updateMatrixWorld()
     const enginePositions = this.group.userData.enginePositions
     if (!enginePositions || enginePositions.length < 2) return
@@ -151,50 +204,74 @@ export class PlayerJet {
   handleMovement(deltaTime) {
     const { pitch, yaw, roll, boost } = this.input
 
-    // Speed control
-    this.targetSpeed = boost && this.boostFuel > 0 ? this.BOOST_SPEED : this.MAX_SPEED
-    const accel = boost ? this.ACCELERATION * 1.5 : this.ACCELERATION
-
-    if (this.speed < this.targetSpeed) {
-      this.speed = Math.min(this.speed + accel * deltaTime, this.targetSpeed)
+    if (boost && this.boostFuel > 0) {
+      this.throttle = Math.min(1.3, this.throttle + 0.5 * deltaTime)
     } else {
-      this.speed = Math.max(this.speed - this.DECELERATION * deltaTime, 0)
+      const targetThrottle = 0.65
+      this.throttle = approach(this.throttle, targetThrottle, 0.2 * deltaTime)
     }
 
-    // Rotation rates
-    const pitchRate = this.TURN_RATE * 0.8
-    const yawRate = this.TURN_RATE
-    const rollRate = this.ROLL_RATE
+    const airspeedNorm = clamp(this.speed / this.CRUISE_SPEED, 0.2, 1.8)
+    const dynamicAuthority = Math.sqrt(airspeedNorm)
 
-    // Apply rotations
-    this.rotation.x = clamp(
-      this.rotation.x + pitch * pitchRate * deltaTime,
-      -this.MAX_PITCH,
-      this.MAX_PITCH
-    )
-    this.rotation.y = wrapAngle(this.rotation.y + yaw * yawRate * deltaTime)
-    this.rotation.z = clamp(
-      this.rotation.z + roll * rollRate * deltaTime,
-      -this.MAX_ROLL,
-      this.MAX_ROLL
-    )
+    const pitchAngle = pitch * this.pitchRate * dynamicAuthority * deltaTime
+    const yawAngle = yaw * this.yawRate * dynamicAuthority * deltaTime
+    const rollAngle = roll * this.rollRate * dynamicAuthority * deltaTime
 
-    // Auto-level roll when not turning
-    if (Math.abs(roll) < 0.1) {
-      this.rotation.z = approach(this.rotation.z, 0, rollRate * 2 * deltaTime)
+    const deltaQuat = new THREE.Quaternion()
+    const eulerDelta = new THREE.Euler(pitchAngle, yawAngle, rollAngle, 'YXZ')
+    deltaQuat.setFromEuler(eulerDelta)
+
+    this.quaternion.multiply(deltaQuat)
+
+    // Auto-leveling toward horizon when neutral
+    if (Math.abs(roll) < 0.1 && Math.abs(yaw) < 0.1) {
+      const currentUp = new THREE.Vector3(0, 1, 0).applyQuaternion(this.quaternion)
+      if (currentUp.y > 0.1) {
+        const targetUp = new THREE.Vector3(0, 1, 0)
+        const alignmentQuat = new THREE.Quaternion().setFromUnitVectors(currentUp, targetUp)
+        this.quaternion.slerp(alignmentQuat.multiply(this.quaternion), deltaTime * 2.0)
+      }
     }
 
-    // Auto-level pitch slightly
-    this.rotation.x = approach(this.rotation.x, 0, pitchRate * 0.3 * deltaTime)
+    this.rotation.setFromQuaternion(this.quaternion)
 
-    // Calculate forward vector
-    const forward = new THREE.Vector3(0, 0, -1).applyEuler(this.rotation)
-    this.velocity.copy(forward).multiplyScalar(this.speed)
+    // Aerodynamic Forces & Physics Calculation
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.quaternion)
+    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(this.quaternion)
 
-    // Update position
-    this.position.add(this.velocity.clone().multiplyScalar(deltaTime))
+    const thrustForce = this.throttle * 45
+    let liftForce = (this.speed * this.speed) * this.LIFT_COEFF
+
+    if (this.speed < this.STALL_SPEED) {
+      this.isStalled = true
+      liftForce *= 0.2
+      const stallNoseDown = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -0.8 * deltaTime)
+      this.quaternion.multiply(stallNoseDown)
+    } else {
+      this.isStalled = false
+    }
+
+    const dragForce = (this.speed * this.speed) * this.DRAG_COEFF
+
+    const accelVector = new THREE.Vector3()
+      .addScaledVector(forward, thrustForce - dragForce)
+      .addScaledVector(up, liftForce)
+      .add(new THREE.Vector3(0, -this.GRAVITY, 0))
+
+    this.velocity.addScaledVector(accelVector, deltaTime)
+    this.speed = this.velocity.length()
+
+    if (this.speed > 2) {
+      const flightDir = this.velocity.clone().normalize()
+      this.position.addScaledVector(flightDir, this.speed * deltaTime)
+    }
+
+    this.airspeedKnots = Math.round(this.speed * 2.2)
+    this.altitudeFeet = Math.round((this.position.y + 50) * 3.28)
+
     this.group.position.copy(this.position)
-    this.group.rotation.copy(this.rotation)
+    this.group.quaternion.copy(this.quaternion)
   }
 
   handleShooting(deltaTime, projectileSystem, particleSystem, audioSystem) {
@@ -205,9 +282,7 @@ export class PlayerJet {
       if (gunPositions && gunPositions.length > 0) {
         const gunPos = gunPositions[this.gunIndex]
         const worldPos = new THREE.Vector3().copy(gunPos).applyMatrix4(this.group.matrixWorld)
-
-        // Forward direction
-        const forward = new THREE.Vector3(0, 0, -1).applyEuler(this.rotation)
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.quaternion)
 
         projectileSystem.spawnPlayerBullet(worldPos, forward)
         particleSystem.spawnMuzzleFlash(worldPos, forward)
@@ -224,18 +299,18 @@ export class PlayerJet {
   handleInvulnerability(deltaTime) {
     if (this.invulnerable) {
       this.invulnerableTime -= deltaTime
-      // Flash effect
       this.group.traverse((child) => {
-        if (child.isMesh && child.material.opacity !== undefined) {
-          child.material.opacity = Math.sin(this.invulnerableTime * 30) * 0.5 + 0.5
+        if (child.isMesh && child.material) {
+          child.material.transparent = true
+          child.material.opacity = Math.sin(this.invulnerableTime * 30) * 0.4 + 0.6
         }
       })
 
       if (this.invulnerableTime <= 0) {
         this.invulnerable = false
         this.group.traverse((child) => {
-          if (child.isMesh && child.material.opacity !== undefined) {
-            child.material.opacity = child.material === this.materials.canopy ? 0.6 : 1
+          if (child.isMesh && child.material) {
+            child.material.opacity = 1.0
           }
         })
       }
@@ -251,8 +326,8 @@ export class PlayerJet {
   }
 
   updateVisuals(deltaTime) {
-    const speedRatio = this.speed / this.MAX_SPEED
-
+    // Engine glow modulation
+    const speedRatio = this.speed / this.MAX_THROTTLE_SPEED
     if (this.materials?.engine) {
       const boostGlow = this.input.boost && this.boostFuel > 0 ? 0.6 : 0
       this.materials.engine.emissiveIntensity = lerp(0.2, 1.5, Math.min(1, speedRatio)) + boostGlow
@@ -260,24 +335,32 @@ export class PlayerJet {
   }
 
   updateCamera(deltaTime) {
-    // Calculate desired camera position
-    const desiredPos = new THREE.Vector3()
-      .copy(this.cameraOffset)
-      .applyEuler(this.rotation)
-      .add(this.position)
+    if (this.cameraMode === 'cockpit') {
+      const cockpitOffset = new THREE.Vector3(0, 0.45, -0.4).applyQuaternion(this.quaternion)
+      const lookAtTarget = new THREE.Vector3(0, 0.45, -15).applyQuaternion(this.quaternion).add(this.position)
 
-    const desiredLookAt = new THREE.Vector3()
-      .copy(this.cameraLookAtOffset)
-      .applyEuler(this.rotation)
-      .add(this.position)
+      this.camera.position.copy(this.position).add(cockpitOffset)
+      const upVector = new THREE.Vector3(0, 1, 0).applyQuaternion(this.quaternion)
+      this.camera.up.copy(upVector)
+      this.camera.lookAt(lookAtTarget)
+    } else {
+      const desiredPos = new THREE.Vector3()
+        .copy(this.cameraOffset)
+        .applyQuaternion(this.quaternion)
+        .add(this.position)
 
-    // Smooth camera follow
-    const lerpFactor = 1 - Math.exp(-8 * deltaTime)
-    this.camera.position.lerp(desiredPos, lerpFactor)
-    this.camera.lookAt(desiredLookAt)
+      const desiredLookAt = new THREE.Vector3()
+        .copy(this.cameraLookAtOffset)
+        .applyQuaternion(this.quaternion)
+        .add(this.position)
 
-    // Add slight camera roll for banking feel
-    this.camera.rotation.z = lerp(this.camera.rotation.z, this.rotation.z * 0.3, lerpFactor)
+      const lerpFactor = 1 - Math.exp(-8 * deltaTime)
+      this.camera.position.lerp(desiredPos, lerpFactor)
+
+      const upVector = new THREE.Vector3(0, 1, 0).applyQuaternion(this.quaternion)
+      this.camera.up.copy(upVector)
+      this.camera.lookAt(desiredLookAt)
+    }
   }
 
   takeDamage(amount = 1) {
@@ -299,7 +382,24 @@ export class PlayerJet {
   }
 
   getSpeedRatio() {
-    return this.speed / this.MAX_SPEED
+    return this.speed / this.MAX_THROTTLE_SPEED
+  }
+
+  toggleCameraMode() {
+    this.cameraMode = this.cameraMode === 'cockpit' ? 'chase' : 'cockpit'
+    return this.cameraMode
+  }
+
+  getAirspeedKnots() {
+    return this.airspeedKnots || Math.round(this.speed * 2.2)
+  }
+
+  getAltitudeFeet() {
+    return this.altitudeFeet || Math.round((this.position.y + 50) * 3.28)
+  }
+
+  getThrottlePercent() {
+    return Math.round(Math.min(100, this.throttle * 100))
   }
 
   getCamera() {
@@ -311,15 +411,17 @@ export class PlayerJet {
   }
 
   getForward() {
-    return new THREE.Vector3(0, 0, -1).applyEuler(this.rotation)
+    return new THREE.Vector3(0, 0, -1).applyQuaternion(this.quaternion)
   }
 
   reset() {
-    this.position.set(0, 0, 0)
+    this.position.set(0, 50, 0)
     this.rotation.set(0, 0, 0)
-    this.velocity.set(0, 0, 0)
-    this.speed = 0
-    this.targetSpeed = 0
+    this.quaternion.identity()
+    this.speed = 55
+    this.velocity.set(0, 0, -55)
+    this.throttle = 0.7
+    this.isStalled = false
     this.health = this.maxHealth
     this.invulnerable = false
     this.invulnerableTime = 0
@@ -327,12 +429,7 @@ export class PlayerJet {
     this.fireCooldown = 0
     this.gunIndex = 0
     this.group.position.copy(this.position)
-    this.group.rotation.copy(this.rotation)
-    this.group.traverse((child) => {
-      if (child.isMesh && child.material?.opacity !== undefined) {
-        child.material.opacity = child.material === this.materials.canopy ? 0.6 : 1
-      }
-    })
+    this.group.quaternion.copy(this.quaternion)
     this.camera.position.copy(this.cameraOffset)
     this.camera.lookAt(this.cameraLookAtOffset)
     if (this.engineTrailLeft) {

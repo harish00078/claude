@@ -1,9 +1,10 @@
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { createEnemyGeometry } from '../utils/geometry'
 import { getEnemyMaterials } from '../utils/materials'
 import { randomRange, randomInt, randomVec3, clamp, lerp, wrapAngle } from '../utils/math'
 
-const MAX_ENEMIES = 60
+const MAX_ENEMIES = 150
 
 const ENEMY_TYPES = {
   drone: {
@@ -11,8 +12,11 @@ const ENEMY_TYPES = {
     health: 1,
     score: 10,
     turnRate: 1.5,
-    fireRate: 0, // Drones don't shoot
-    spawnWeight: 50
+    fireRate: 0,
+    spawnWeight: 50,
+    scale: 0.20,
+    color: 0xd63031,
+    camoColor: 0x636e72
   },
   interceptor: {
     speed: { min: 40, max: 70 },
@@ -21,7 +25,10 @@ const ENEMY_TYPES = {
     turnRate: 2.5,
     fireRate: 1.5,
     bulletSpeed: 100,
-    spawnWeight: 30
+    spawnWeight: 30,
+    scale: 0.24,
+    color: 0xe1b12c,
+    camoColor: 0x2d3436
   },
   bomber: {
     speed: { min: 15, max: 30 },
@@ -31,8 +38,11 @@ const ENEMY_TYPES = {
     fireRate: 2,
     bulletSpeed: 70,
     dropMines: true,
-    mineRate: 4, // seconds between mine drops
-    spawnWeight: 15
+    mineRate: 4,
+    spawnWeight: 15,
+    scale: 0.32,
+    color: 0x2f3640,
+    camoColor: 0x192a56
   },
   ace: {
     speed: { min: 50, max: 90 },
@@ -44,7 +54,10 @@ const ENEMY_TYPES = {
     canFireMissiles: true,
     missileRate: 5,
     dodgeRate: 0.3,
-    spawnWeight: 5
+    spawnWeight: 5,
+    scale: 0.26,
+    color: 0x1e272e,
+    camoColor: 0x00d2d3
   }
 }
 
@@ -59,24 +72,27 @@ export class EnemyManager {
     this.activeEnemies = []
     this.enemyPool = []
 
+    this.baseModel = null
+    this.load3DModel()
+
     // Wave system
     this.wave = 1
     this.enemiesInWave = 0
     this.enemiesKilledInWave = 0
     this.waveTimer = 0
-    this.waveDelay = 3 // seconds between waves
+    this.waveDelay = 3
     this.campaignActive = false
 
     // Spawning
     this.spawnTimer = 0
-    this.spawnInterval = 1.5
-    this.maxActiveEnemies = 8
+    this.spawnInterval = 0.3
+    this.maxActiveEnemies = 25
 
     // Difficulty scaling
     this.difficulty = 1
     this.maxDifficulty = 10
 
-    // Player reference (set externally)
+    // Player reference
     this.playerPosition = new THREE.Vector3()
     this.playerVelocity = new THREE.Vector3()
     this.playerForward = new THREE.Vector3(0, 0, -1)
@@ -86,6 +102,44 @@ export class EnemyManager {
     this.onWaveComplete = null
 
     this.initPool()
+  }
+
+  load3DModel() {
+    const loader = new GLTFLoader()
+    loader.load(
+      '/assets/models/fighter-jet.glb',
+      (gltf) => {
+        const model = gltf.scene
+
+        const box = new THREE.Box3().setFromObject(model)
+        const center = new THREE.Vector3()
+        box.getCenter(center)
+        model.position.x -= center.x
+        model.position.y -= center.y
+        model.position.z -= center.z
+
+        const container = new THREE.Group()
+        container.add(model)
+
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true
+            child.receiveShadow = true
+          }
+        })
+
+        this.baseModel = container
+
+        // Update existing active enemies to use the new 3D model
+        this.activeEnemies.forEach(enemy => {
+          this.setupEnemyVisuals(enemy, enemy.type)
+        })
+      },
+      undefined,
+      (err) => {
+        console.warn('EnemyManager 3D model fallback in use:', err)
+      }
+    )
   }
 
   initPool() {
@@ -110,7 +164,7 @@ export class EnemyManager {
       mineCooldown: 0,
       dodgeCooldown: 0,
       hitFlashTime: 0,
-      state: 'approach', // approach, attack, flee, circle
+      state: 'approach',
       targetPosition: new THREE.Vector3(),
       spawnTime: 0
     }
@@ -124,43 +178,90 @@ export class EnemyManager {
         return enemy
       }
     }
-    // Pool exhausted - shouldn't happen with proper maxActiveEnemies
     return null
+  }
+
+  setupEnemyVisuals(enemyObj, type) {
+    const config = ENEMY_TYPES[type]
+    const mesh = enemyObj.mesh
+
+    while (mesh.children.length > 0) {
+      mesh.remove(mesh.children[0])
+    }
+
+    if (this.baseModel) {
+      // Clone photorealistic 3D fighter jet model
+      const modelClone = this.baseModel.clone(true)
+      modelClone.scale.setScalar(config.scale)
+
+      // Apply tactical livery based on enemy class
+      modelClone.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true
+          child.receiveShadow = true
+          if (child.material) {
+            const mat = child.material.clone()
+            if (child.name.includes('Body') || child.name.includes('Fuel')) {
+              mat.color = new THREE.Color(config.color)
+              mat.metalness = 0.8
+              mat.roughness = 0.25
+            } else if (child.name.includes('Cockpit')) {
+              mat.color = new THREE.Color(config.camoColor)
+              mat.metalness = 0.1
+              mat.roughness = 0.05
+              mat.transmission = 0.8
+            }
+            child.material = mat
+          }
+        }
+      })
+      mesh.add(modelClone)
+    } else {
+      // Clean fallback
+      const geo = createEnemyGeometry(type)
+      const materials = getEnemyMaterials(type)
+      geo.traverse((child) => {
+        if (child.isMesh) {
+          child.material = materials.body || materials.wing
+        }
+      })
+      mesh.add(geo)
+      mesh.scale.setScalar(2.0)
+    }
+
+    // Modern Tactical HUD Target Diamond (subtle military reticle instead of paper ring)
+    const reticleGeo = new THREE.BufferGeometry()
+    const reticlePoints = new Float32Array([
+      0, 2.2, 0,    1.5, 0, 0,
+      1.5, 0, 0,    0, -2.2, 0,
+      0, -2.2, 0,  -1.5, 0, 0,
+      -1.5, 0, 0,   0, 2.2, 0
+    ])
+    reticleGeo.setAttribute('position', new THREE.BufferAttribute(reticlePoints, 3))
+    const reticleMat = new THREE.LineBasicMaterial({
+      color: type === 'ace' ? 0x00ffff : (type === 'bomber' ? 0xffaa00 : 0xff3344),
+      transparent: true,
+      opacity: 0.75
+    })
+    const reticle = new THREE.LineSegments(reticleGeo, reticleMat)
+    reticle.scale.setScalar(0.7)
+    mesh.add(reticle)
   }
 
   setupEnemy(enemyObj, type) {
     const config = ENEMY_TYPES[type]
     const mesh = enemyObj.mesh
 
-    // Clear previous geometry
-    while (mesh.children.length > 0) {
-      mesh.remove(mesh.children[0])
-    }
+    this.setupEnemyVisuals(enemyObj, type)
 
-    // Add new geometry
-    const geo = createEnemyGeometry(type)
-    mesh.add(geo)
-
-    // Apply materials
-    const materials = getEnemyMaterials(type)
-    geo.traverse((child) => {
-      if (child.isMesh) {
-        if (child.geometry.type.includes('Cone') || child.geometry.type.includes('Box')) {
-          child.material = materials.body
-        } else {
-          child.material = materials.wing || materials.body
-        }
-      }
-    })
-
-    // Initialize properties
     enemyObj.active = true
     enemyObj.type = type
     mesh.visible = true
+
     mesh.userData.type = type
     mesh.userData.health = config.health
     mesh.userData.maxHealth = config.health
-    mesh.userData.collisionRadius = geo.userData.collisionRadius
+    mesh.userData.collisionRadius = 2.5
     mesh.userData.speed = randomRange(config.speed.min, config.speed.max)
     mesh.userData.turnRate = config.turnRate
     mesh.userData.fireCooldown = randomRange(0, config.fireRate || 1)
@@ -195,11 +296,9 @@ export class EnemyManager {
       .add(right.multiplyScalar(Math.sin(spawnAngle) * 80))
     mesh.position.y += spawnHeight
 
-    // Face roughly toward player
     const toPlayer = new THREE.Vector3().subVectors(this.playerPosition, mesh.position).normalize()
     mesh.lookAt(mesh.position.clone().add(toPlayer))
 
-    // Set initial target
     mesh.userData.targetPosition.copy(this.playerPosition).add(new THREE.Vector3(
       randomRange(-30, 30),
       randomRange(-10, 20),
@@ -217,7 +316,6 @@ export class EnemyManager {
 
   updateWaves(deltaTime) {
     if (!this.campaignActive) return
-    // Wave is done only after every enemy has spawned AND none remain alive
     if (this.activeEnemies.length === 0 && this.enemiesInWave === 0) {
       this.waveTimer += deltaTime
       if (this.waveTimer >= this.waveDelay) {
@@ -233,8 +331,8 @@ export class EnemyManager {
     this.spawnTimer = 0
 
     this.difficulty = Math.min(this.maxDifficulty, 1 + this.wave * 0.15)
-    this.maxActiveEnemies = Math.min(20, 6 + Math.floor(this.wave * 0.8))
-    this.spawnInterval = Math.max(0.4, 1.5 - this.wave * 0.05)
+    this.maxActiveEnemies = Math.min(60, 25 + Math.floor(this.wave * 4))
+    this.spawnInterval = Math.max(0.1, 0.4 - this.wave * 0.03)
     this.enemiesInWave = this.calculateWaveSize(this.wave)
 
     if (this.onWaveComplete) {
@@ -256,7 +354,6 @@ export class EnemyManager {
   spawnEnemy() {
     if (this.enemiesInWave <= 0) return
 
-    // Select enemy type based on wave and weights
     const type = this.selectEnemyType()
     const enemy = this.getEnemyFromPool(type)
 
@@ -267,11 +364,9 @@ export class EnemyManager {
   }
 
   selectEnemyType() {
-    // Weighted random selection based on wave
     const types = Object.keys(ENEMY_TYPES)
     const weights = types.map(t => {
       let w = ENEMY_TYPES[t].spawnWeight
-      // Increase interceptor/bomber/ace chances in later waves
       if (t === 'interceptor') w *= 1 + this.wave * 0.1
       if (t === 'bomber') w *= 1 + this.wave * 0.08
       if (t === 'ace') w *= 1 + this.wave * 0.15
@@ -296,13 +391,9 @@ export class EnemyManager {
 
       data.spawnTime += deltaTime
 
-      // State machine
       this.updateEnemyAI(enemyObj, deltaTime)
-
-      // Movement
       this.moveEnemy(enemyObj, deltaTime)
 
-      // Shooting
       if (data.canFire) {
         data.fireCooldown -= deltaTime
         if (data.fireCooldown <= 0) {
@@ -311,7 +402,6 @@ export class EnemyManager {
         }
       }
 
-      // Missiles (aces)
       if (data.canFireMissiles) {
         data.missileCooldown -= deltaTime
         if (data.missileCooldown <= 0 && Math.random() < 0.4) {
@@ -320,7 +410,6 @@ export class EnemyManager {
         }
       }
 
-      // Mines (bombers) - drop while circling near the player
       if (data.dropMines) {
         data.mineCooldown -= deltaTime
         if (data.mineCooldown <= 0 && data.state === 'circle') {
@@ -329,22 +418,21 @@ export class EnemyManager {
         }
       }
 
-      // Dodge (aces)
       if (data.type === 'ace') {
         data.dodgeCooldown -= deltaTime
       }
 
-      // Hit flash decay (frame-based, replaces setTimeout)
       if (data.hitFlashTime > 0) {
         data.hitFlashTime -= deltaTime
         if (data.hitFlashTime <= 0) {
           mesh.traverse((child) => {
-            if (child.isMesh) child.material.emissiveIntensity = 0
+            if (child.isMesh && child.material && child.material.emissive) {
+              child.material.emissiveIntensity = 0
+            }
           })
         }
       }
 
-      // Despawn if too far behind player
       const distToPlayer = mesh.position.distanceTo(this.playerPosition)
       if (distToPlayer > 300 || mesh.position.z > this.playerPosition.z + 100) {
         this.despawnEnemy(i, false)
@@ -360,7 +448,6 @@ export class EnemyManager {
 
     switch (data.state) {
       case 'approach':
-        // Move toward player, transition to attack when close
         data.targetPosition.copy(this.playerPosition)
         if (distToPlayer < 80) {
           data.state = data.type === 'bomber' ? 'circle' : 'attack'
@@ -368,10 +455,8 @@ export class EnemyManager {
         break
 
       case 'attack':
-        // Direct attack run
         data.targetPosition.copy(this.playerPosition)
         if (distToPlayer < 30) {
-          // Overshoot and circle around
           data.state = 'circle'
           data.targetPosition.copy(this.playerPosition).add(new THREE.Vector3(
             randomRange(-50, 50),
@@ -382,9 +467,7 @@ export class EnemyManager {
         break
 
       case 'circle':
-        // Circle around player
         if (data.type === 'bomber') {
-          // Bombers circle wider and slower
           const angle = data.spawnTime * 0.3
           data.targetPosition.copy(this.playerPosition).add(new THREE.Vector3(
             Math.cos(angle) * 60,
@@ -392,7 +475,6 @@ export class EnemyManager {
             Math.sin(angle) * 60
           ))
         } else {
-          // Interceptors/aces circle tighter
           const angle = data.spawnTime * 0.8
           data.targetPosition.copy(this.playerPosition).add(new THREE.Vector3(
             Math.cos(angle) * 40,
@@ -403,25 +485,21 @@ export class EnemyManager {
         break
 
       case 'flee':
-        // Damaged enemies flee
         data.targetPosition.copy(mesh.position).add(
           toPlayer.clone().normalize().multiplyScalar(-100)
         )
         break
     }
 
-    // Low health behavior
     if (data.health < data.maxHealth * 0.4 && data.state !== 'flee') {
       if (Math.random() < 0.02) data.state = 'flee'
     }
 
-    // Ace dodge behavior
     if (data.type === 'ace' && data.dodgeCooldown <= 0 && distToPlayer < 60) {
       if (Math.random() < 0.01) {
-        // Quick dodge
         const dodgeDir = new THREE.Vector3()
         randomVec3(1, dodgeDir)
-        dodgeDir.y = Math.abs(dodgeDir.y) // Prefer upward dodges
+        dodgeDir.y = Math.abs(dodgeDir.y)
         data.targetPosition.copy(mesh.position).add(dodgeDir.multiplyScalar(30))
         data.dodgeCooldown = 2 + Math.random() * 2
       }
@@ -436,7 +514,6 @@ export class EnemyManager {
     const distToTarget = toTarget.length()
 
     if (distToTarget > 1) {
-      // Rotate toward target
       const targetDir = toTarget.clone().normalize()
       const currentDir = new THREE.Vector3(0, 0, -1).applyEuler(mesh.rotation)
 
@@ -444,11 +521,9 @@ export class EnemyManager {
       if (angle > 0.05) {
         const axis = new THREE.Vector3().crossVectors(currentDir, targetDir).normalize()
         const turnAmount = Math.min(angle, data.turnRate * deltaTime)
-        mesh.rotation.y += Math.sign(axis.y) * turnAmount // Simplified - yaw only
-        // Proper quaternion slerp would be better but this works for now
+        mesh.rotation.y += Math.sign(axis.y) * turnAmount
       }
 
-      // Move forward
       const forward = new THREE.Vector3(0, 0, -1).applyEuler(mesh.rotation)
       mesh.position.add(forward.clone().multiplyScalar(data.speed * deltaTime))
     }
@@ -461,7 +536,6 @@ export class EnemyManager {
     const forward = new THREE.Vector3(0, 0, -1).applyEuler(mesh.rotation)
     const gunPos = new THREE.Vector3(0, 0, -1.5).applyMatrix4(mesh.matrixWorld)
 
-    // Aim slightly ahead of player (lead target)
     const toPlayer = new THREE.Vector3().subVectors(this.playerPosition, gunPos)
     const playerDist = toPlayer.length()
     const leadTime = playerDist / data.bulletSpeed
@@ -477,7 +551,6 @@ export class EnemyManager {
 
   dropMine(enemyObj) {
     const mesh = enemyObj.mesh
-    // Drop from the bomb bay (slightly below the bomber)
     const dropPos = new THREE.Vector3(0, -0.8, 0).applyMatrix4(mesh.matrixWorld)
     this.projectileSystem.spawnMine(dropPos)
   }
@@ -492,15 +565,20 @@ export class EnemyManager {
     if (this.audioSystem) this.audioSystem.playMissileLaunch()
   }
 
-  checkBulletCollision(bullet) {
-    for (let i = this.activeEnemies.length - 1; i >= 0; i--) {
-      const enemyObj = this.activeEnemies[i]
+  checkBulletCollision(bullet, spatialGrid) {
+    const candidates = spatialGrid ? spatialGrid.getNearby(bullet.position, 20) : this.activeEnemies
+
+    for (let i = 0; i < candidates.length; i++) {
+      const enemyObj = candidates[i]
+      const index = this.activeEnemies.indexOf(enemyObj)
+      if (index === -1) continue
+
       const mesh = enemyObj.mesh
       const data = mesh.userData
 
       const dist = bullet.position.distanceTo(mesh.position)
-      if (dist < data.collisionRadius || dist < 1.2) {
-        this.damageEnemy(i, 1, bullet.position.clone())
+      if (dist < (data.collisionRadius || 2.0) || dist < 1.2) {
+        this.damageEnemy(index, 1, bullet.position.clone())
         return true
       }
     }
@@ -510,14 +588,13 @@ export class EnemyManager {
   checkMissileCollision(missile) {
     if (!missile.userData.target) return false
 
-    // Find the target enemy
     for (let i = this.activeEnemies.length - 1; i >= 0; i--) {
       const enemyObj = this.activeEnemies[i]
       if (enemyObj === missile.userData.target) {
         const mesh = enemyObj.mesh
         const dist = missile.position.distanceTo(mesh.position)
         if (dist < 3) {
-          this.damageEnemy(i, 2, missile.position.clone()) // Missiles do 2 damage
+          this.damageEnemy(i, 2, missile.position.clone())
           return true
         }
       }
@@ -532,16 +609,14 @@ export class EnemyManager {
 
     data.health -= amount
 
-    // Hit flash (reset by frame-based timer in updateEnemies)
     mesh.traverse((child) => {
-      if (child.isMesh) {
+      if (child.isMesh && child.material && child.material.emissive) {
         child.material.emissive = new THREE.Color(0xffaa00)
         child.material.emissiveIntensity = 1
       }
     })
     data.hitFlashTime = 0.05
 
-    // Hit particles
     if (this.particleSystem) {
       this.particleSystem.spawnHitSparks(hitPosition)
     }
@@ -558,12 +633,10 @@ export class EnemyManager {
     const mesh = enemyObj.mesh
     const data = mesh.userData
 
-    // Explosion
     if (this.particleSystem) {
       this.particleSystem.spawnExplosion(position, data.type)
     }
 
-    // Score
     if (this.onEnemyKilled) {
       this.onEnemyKilled(data.scoreValue, data.type)
     }
@@ -607,8 +680,8 @@ export class EnemyManager {
     this.clearActiveEnemies()
     this.waveTimer = 0
     this.difficulty = 1
-    this.maxActiveEnemies = 8
-    this.spawnInterval = 1.5
+    this.maxActiveEnemies = 25
+    this.spawnInterval = 0.3
     this.startWave(1)
   }
 
@@ -622,7 +695,7 @@ export class EnemyManager {
   }
 
   calculateWaveSize(wave) {
-    return Math.min(15 + wave * 2, 40)
+    return Math.min(40 + wave * 10, 150)
   }
 
   getWave() { return this.wave }

@@ -12,6 +12,14 @@ export default function HUD({
 
   return (
     <div className="hud">
+      {/* Top center - Multiplayer Badge */}
+      <div style={{ position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', pointerEvents: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0, 20, 40, 0.75)', padding: '6px 14px', borderRadius: '20px', border: '1px solid rgba(0, 220, 255, 0.5)', backdropFilter: 'blur(4px)' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#00ff88', boxShadow: '0 0 8px #00ff88' }} />
+          <span style={{ color: '#00e5ff', fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px', fontFamily: 'monospace' }}>ONLINE MULTIPLAYER</span>
+        </div>
+      </div>
+
       {/* Top left - Score & Wave */}
       <div className="hud-panel top-left">
         <div className="hud-row">

@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { createBulletGeometry } from '../utils/geometry'
 import { createPlayerBulletMaterial, createEnemyBulletMaterial, createMissileMaterial } from '../utils/materials'
 import { randomRange } from '../utils/math'
+import { SpatialGrid } from '../utils/spatialGrid'
 
 const MAX_PLAYER_BULLETS = 200
 const MAX_ENEMY_BULLETS = 100
@@ -48,6 +49,9 @@ export class ProjectileSystem {
       roughness: 0.4,
       flatShading: true
     })
+
+    // Spatial partitioning for O(1) collision queries
+    this.spatialGrid = new SpatialGrid(50)
 
     // Pre-allocate pools
     this.initPools()
@@ -239,16 +243,25 @@ export class ProjectileSystem {
   }
 
   updatePlayerBullets(deltaTime, enemyManager, particleSystem, audioSystem) {
+    if (enemyManager && enemyManager.activeEnemies) {
+      this.spatialGrid.clear()
+      for (let i = 0; i < enemyManager.activeEnemies.length; i++) {
+        const enemyObj = enemyManager.activeEnemies[i]
+        if (enemyObj?.mesh) {
+          this.spatialGrid.insert(enemyObj, enemyObj.mesh.position)
+        }
+      }
+    }
+
     for (let i = this.activePlayerBullets.length - 1; i >= 0; i--) {
       const bullet = this.activePlayerBullets[i]
 
       bullet.position.add(bullet.userData.velocity.clone().multiplyScalar(deltaTime))
       bullet.userData.lifetime -= deltaTime
 
-      // Check collision with enemies
       let hit = false
       if (enemyManager) {
-        hit = enemyManager.checkBulletCollision(bullet)
+        hit = enemyManager.checkBulletCollision(bullet, this.spatialGrid)
       }
 
       if (hit && this.onEnemyHit) {

@@ -8,12 +8,16 @@ import { ParticleSystem } from '../systems/ParticleSystem'
 import { ScoreSystem } from '../systems/ScoreSystem'
 import { AudioSystem } from '../systems/AudioSystem'
 import { Environment } from '../systems/Environment'
+import { MultiplayerManager } from '../systems/MultiplayerManager'
 import { useGameLoop } from '../hooks/useGameLoop'
 import { useKeyboard } from '../hooks/useKeyboard'
+import { getTerrainHeight } from '../utils/geometry'
+import { MobileControls } from './MobileControls'
 
 const GameCanvas = forwardRef((props, ref) => {
   const {
     gameState,
+    touchInput,
     onScoreChange,
     onHighScoreChange,
     onWaveChange,
@@ -36,9 +40,17 @@ const GameCanvas = forwardRef((props, ref) => {
   const scoreSystemRef = useRef(null)
   const audioSystemRef = useRef(null)
   const environmentRef = useRef(null)
+  const multiplayerRef = useRef(null)
 
-  // Keyboard input
+  // Keyboard & Touch input
   const keyboard = useKeyboard()
+  const touchInputRef = useRef({ up: false, down: false, left: false, right: false, boost: false, fire: false })
+
+  useEffect(() => {
+    if (touchInput) {
+      touchInputRef.current = touchInput
+    }
+  }, [touchInput])
 
   // Initialize systems
   useEffect(() => {
@@ -61,12 +73,26 @@ const GameCanvas = forwardRef((props, ref) => {
       audioSystemRef.current
     )
     environmentRef.current = new Environment(scene)
+    multiplayerRef.current = new MultiplayerManager(
+      scene,
+      projectileSystemRef.current,
+      particleSystemRef.current,
+      audioSystemRef.current
+    )
+    multiplayerRef.current.connect()
+
     set({ camera: playerJetRef.current.getCamera() })
 
     // Set up callbacks
     // Accuracy tracking (score is added only via onEnemyKilled to avoid double counting)
     projectileSystemRef.current.onPlayerShot = () => {
       scoreSystemRef.current.recordShot()
+      if (playerJetRef.current) {
+        multiplayerRef.current?.emitFireWeapon(
+          playerJetRef.current.getPosition(),
+          playerJetRef.current.getForward()
+        )
+      }
     }
     projectileSystemRef.current.onEnemyHit = () => {
       scoreSystemRef.current.recordHit()
@@ -114,6 +140,11 @@ const GameCanvas = forwardRef((props, ref) => {
       },
       getEnemiesDestroyed: () => scoreSystemRef.current.enemiesDestroyed,
       getAccuracy: () => scoreSystemRef.current.getAccuracy(),
+      getAirspeedKnots: () => playerJetRef.current?.getAirspeedKnots() || 0,
+      getAltitudeFeet: () => playerJetRef.current?.getAltitudeFeet() || 0,
+      getThrottlePercent: () => playerJetRef.current?.getThrottlePercent() || 0,
+      isStalled: () => playerJetRef.current?.isStalled || false,
+      toggleCameraMode: () => playerJetRef.current?.toggleCameraMode() || 'cockpit',
       dispose: () => {
         playerJetRef.current?.dispose()
         enemyManagerRef.current?.dispose()
@@ -121,6 +152,7 @@ const GameCanvas = forwardRef((props, ref) => {
         particleSystemRef.current?.dispose()
         environmentRef.current?.dispose()
         audioSystemRef.current?.dispose()
+        multiplayerRef.current?.dispose()
         scoreSystemRef.current = null
       }
     }
@@ -148,12 +180,12 @@ const GameCanvas = forwardRef((props, ref) => {
 
     // Update input
     const input = {
-      up: keyboard.up,
-      down: keyboard.down,
-      left: keyboard.left,
-      right: keyboard.right,
-      boost: keyboard.boost,
-      fire: keyboard.fire
+      up: keyboard.up || touchInputRef.current.up,
+      down: keyboard.down || touchInputRef.current.down,
+      left: keyboard.left || touchInputRef.current.left,
+      right: keyboard.right || touchInputRef.current.right,
+      boost: keyboard.boost || touchInputRef.current.boost,
+      fire: keyboard.fire || touchInputRef.current.fire
     }
 
     if (keyboard.pause) {
@@ -190,6 +222,18 @@ const GameCanvas = forwardRef((props, ref) => {
       playerJetRef.current?.speed || 0
     )
 
+    // Update multiplayer remote player interpolation & emit local state
+    if (playerJetRef.current) {
+      multiplayerRef.current?.emitLocalState(
+        playerJetRef.current.getPosition(),
+        playerJetRef.current.quaternion,
+        playerJetRef.current.speed,
+        playerJetRef.current.health,
+        deltaTime
+      )
+    }
+    multiplayerRef.current?.update(deltaTime)
+
     // Update player data for enemy manager
     if (playerJetRef.current && enemyManagerRef.current) {
       enemyManagerRef.current.setPlayerData(
@@ -202,7 +246,7 @@ const GameCanvas = forwardRef((props, ref) => {
     // Check player collision with enemy bullets
     if (projectileSystemRef.current?.checkPlayerCollision(
       playerJetRef.current.getPosition(),
-      playerJetRef.current.group.userData.collisionRadius
+      playerJetRef.current.group.userData.collisionRadius || 2
     )) {
       const dead = playerJetRef.current.takeDamage(1)
       onLivesChange(playerJetRef.current.getHealth())
@@ -215,7 +259,28 @@ const GameCanvas = forwardRef((props, ref) => {
 
       if (dead) {
         onGameOver(scoreSystemRef.current.getScore())
-        audioSystemRef.current.stopEngine()
+        audioSystemRef.current?.stopEngine()
+      }
+    }
+
+    // Check ground collision with terrain
+    if (playerJetRef.current) {
+      const pos = playerJetRef.current.getPosition()
+      const terrainY = getTerrainHeight(pos.x, pos.z)
+      if (pos.y <= terrainY + 1.5) {
+        pos.y = terrainY + 1.5
+        const dead = playerJetRef.current.takeDamage(1)
+        onLivesChange(playerJetRef.current.getHealth())
+
+        if (audioSystemRef.current) audioSystemRef.current.playExplosion()
+        if (particleSystemRef.current) {
+          particleSystemRef.current.spawnExplosion(pos, 'large')
+        }
+
+        if (dead) {
+          onGameOver(scoreSystemRef.current.getScore())
+          audioSystemRef.current?.stopEngine()
+        }
       }
     }
 

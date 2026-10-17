@@ -28,12 +28,23 @@ export class Environment {
   }
 
   createLighting() {
-    const ambient = new THREE.AmbientLight(0x8fb3ff, 0.45)
+    const ambient = new THREE.AmbientLight(0x8fb3ff, 0.6)
 
-    const sun = new THREE.DirectionalLight(0xfff1c4, 1.8)
-    sun.position.set(80, 120, 40)
+    const sun = new THREE.DirectionalLight(0xfff1c4, 2.2)
+    sun.position.set(120, 180, 60)
+    sun.castShadow = true
+    sun.shadow.mapSize.width = 2048
+    sun.shadow.mapSize.height = 2048
+    sun.shadow.camera.near = 0.5
+    sun.shadow.camera.far = 1000
+    sun.shadow.camera.left = -200
+    sun.shadow.camera.right = 200
+    sun.shadow.camera.top = 200
+    sun.shadow.camera.bottom = -200
 
-    const fill = new THREE.HemisphereLight(0x88aaff, 0x1a3a2a, 0.8)
+    const fill = new THREE.HemisphereLight(0x88bbee, 0x1a3a2a, 1.0)
+
+    this.scene.fog = new THREE.FogExp2(0x112233, 0.0007)
 
     this.lights.push(ambient, sun, fill)
     this.lights.forEach(light => this.scene.add(light))
@@ -48,17 +59,18 @@ export class Environment {
   }
 
   createTerrain() {
-    // Create a few terrain tiles that we'll recycle
+    // Create high-detail terrain tiles
     const tileCount = 4
 
     for (let i = 0; i < tileCount; i++) {
-      const geo = createTerrainGeometry(this.tileSize, this.tileSize, 32)
+      const geo = createTerrainGeometry(this.tileSize, this.tileSize, 128)
       const mat = createTerrainMaterial()
 
       const mesh = new THREE.Mesh(geo, mat)
       mesh.position.y = -50
       mesh.position.z = -i * this.tileSize
       mesh.receiveShadow = true
+      mesh.castShadow = true
 
       this.scene.add(mesh)
       this.terrainTiles.push(mesh)
